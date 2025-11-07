@@ -1,122 +1,199 @@
+// main.dart
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // REQUIRED FOR ONBOARDING CHECK
+
+// --- Local Imports ---
+import 'theme.dart';
+import 'providers/task_provider.dart';
+import 'providers/theme_provider.dart'; // <--- **FIX: Missing ThemeProvider Import**
+import 'screens/today_tasks_screen.dart';
+import 'screens/task_edit_sheet.dart'; // For FAB
+import 'screens/onboarding/onboarding_flow.dart'; // For initial check
+import 'screens/export_flow/export_format_screen.dart'; // For routing example
+// We need to import the placeholder screens for the shell to work
+import 'screens/repeated_tasks_list.dart'; // Placeholder for Tasks tab
+import 'screens/compact_calendar_view.dart'; // Placeholder for Calendar tab
+import 'screens/settings_screen.dart'; // Placeholder for Settings tab
+
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  // Initialize DatabaseHelper here if needed: DatabaseHelper.instance.database;
+  runApp(const TaskManagerApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+// ----------------------------------------------
+// 1. Initial Loader (Checks Onboarding Status)
+// ----------------------------------------------
+class InitialLoader extends StatelessWidget {
+  const InitialLoader({super.key});
 
-  // This widget is the root of your application.
+  Future<bool> _checkOnboardingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Returns true if 'has_seen_onboarding' is true, false otherwise (including null)
+    return prefs.getBool('has_seen_onboarding') ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return FutureBuilder<bool>(
+      future: _checkOnboardingStatus(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          final hasSeenOnboarding = snapshot.data ?? false;
+
+          if (hasSeenOnboarding) {
+            // User has seen it, go straight to the main app shell
+            return const TaskManagerShell();
+          } else {
+            // First time user, show onboarding
+            return const OnboardingFlow();
+          }
+        }
+        // Show a simple loading screen while checking status
+        return const Scaffold(
+          backgroundColor: primaryDark,
+          body: Center(child: CircularProgressIndicator(color: accentGreen)),
+        );
+      },
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+// ----------------------------------------------
+// 2. Main App Configuration
+// ----------------------------------------------
+class TaskManagerApp extends StatelessWidget {
+  const TaskManagerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TaskProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()), // This line now works
+      ],
+      child: Consumer<ThemeProvider>( // WRAP MaterialApp with Consumer
+          builder: (context, themeProvider, child) {
+            return MaterialApp(
+              title: 'Task Manager',
+              debugShowCheckedModeBanner: false,
+              // Use the dynamic theme data from the provider
+              theme: themeProvider.currentThemeData,
+              darkTheme: themeProvider.currentThemeData, // Use for consistency
+              themeMode: themeProvider.themeMode, // Control Theme Mode
+              home: const InitialLoader(),
+              // routes...
+            );
+          }
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+    );
+  }
+}
+
+
+// ----------------------------------------------
+// 3. App Shell (Bottom Navigation Consistency)
+// ----------------------------------------------
+class TaskManagerShell extends StatefulWidget {
+  const TaskManagerShell({super.key});
+
+  @override
+  State<TaskManagerShell> createState() => _TaskManagerShellState();
+}
+
+class _TaskManagerShellState extends State<TaskManagerShell> {
+  int _currentIndex = 0;
+
+  // Placeholder screens for all four bottom navigation tabs
+  final List<Widget> _screens = [
+    const TodayTasksScreen(),           // Index 0: Today (Home)
+    const RepeatedTasksListScreen(),    // Index 1: Tasks (Repeated Tasks)
+    const CompactCalendarView(),        // Index 2: Calendar
+    const SettingsScreen(),             // Index 3: Settings
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryDark = Theme.of(context).scaffoldBackgroundColor;
+    final accentGreen = Theme.of(context).colorScheme.primary;
+
+    return Scaffold(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: primaryDark,
+        selectedItemColor: accentGreen,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Today'),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Tasks'),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Calendar'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        onPressed: () {
+          // Open Task Add / Edit Sheet
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: primaryDark,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            builder: (context) => const TaskEditSheet(),
+          ).then((_) {
+            // Refresh tasks after modal closes (in case a new task was added)
+            Provider.of<TaskProvider>(context, listen: false).fetchTasks();
+          });
+        },
+        backgroundColor: accentGreen,
+        child:  Icon(Icons.add, color: primaryDark),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+}
+
+// ----------------------------------------------
+// 4. Placeholder Screens (For Navigation)
+// ----------------------------------------------
+// NOTE: These are required to make the TaskManagerShell compile and run
+class RepeatedTasksListScreen extends StatelessWidget {
+  const RepeatedTasksListScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Repeated Tasks')),
+      body: const Center(child: Text("Repeated Tasks Screen (Placeholder)", style: TextStyle(color: textLight))),
+    );
+  }
+}
+
+class CompactCalendarView extends StatelessWidget {
+  const CompactCalendarView({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Calendar View')),
+      body: const Center(child: Text("Compact Calendar View (Placeholder)", style: TextStyle(color: textLight))),
+    );
+  }
+}
+
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Settings')),
+      body: const Center(child: Text("Settings Screen (Placeholder)", style: TextStyle(color: textLight))),
     );
   }
 }
