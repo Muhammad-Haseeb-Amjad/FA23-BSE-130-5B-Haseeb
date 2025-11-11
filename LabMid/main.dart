@@ -4,30 +4,65 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // REQUIRED FOR ONBOARDING CHECK
 
+// ✅ NEW IMPORTS FOR NOTIFICATIONS & TIME ZONE
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// NOTE: Humne TimezoneInfo object use karne ke liye, TimezoneInfo class ko access karne ki zaroorat nahi hai.
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'dart:io'; // Platform check ke liye
+// ---------------------------------------------
+
+
 // --- Local Imports ---
-import 'theme.dart';
+import 'theme.dart'; // Is file mein AppTheme class honi chahiye
 import 'providers/task_provider.dart';
-import 'providers/theme_provider.dart'; // <--- **FIX: Missing ThemeProvider Import**
+import 'providers/theme_provider.dart';
+// FIX 1: ExportOptionsProvider ko import karein
+import 'providers/export_options_provider.dart';
 import 'screens/today_tasks_screen.dart';
 import 'screens/task_edit_sheet.dart'; // For FAB
 import 'screens/onboarding/onboarding_flow.dart'; // For initial check
 import 'screens/export_flow/export_format_screen.dart'; // For routing example
-// We need to import the placeholder screens for the shell to work
-import 'screens/repeated_tasks_list.dart'; // Placeholder for Tasks tab
-import 'screens/compact_calendar_view.dart'; // Placeholder for Calendar tab
-import 'screens/settings_screen.dart'; // Placeholder for Settings tab
+// ✅ NEW IMPORT: Notification Service
+import 'services/notification_service.dart';
 
 
-void main() {
+// IMPORTANT: Yeh imports ab aapki real screens ko point karne chahiye
+import 'screens/repeated_tasks_list.dart'; // Real screen import
+import 'screens/compact_calendar_view.dart'; // Real screen import
+import 'screens/settings_screen.dart'; // Real screen import
+
+
+// ✅ FIX 1: main() function ko async banaya aur Notification Initialization add kiya
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Initialize DatabaseHelper here if needed: DatabaseHelper.instance.database;
+
+  // --- Zaroori Notification Setup ---
+  // 1. Timezone set karna zaroori hai scheduled notifications ke liye
+  try {
+    // 💡 CRITICAL FIX: FlutterTimezone ka latest version TimezoneInfo object return karta hai.
+    // Hum Timezone ID nikalne ke liye toString() method istemaal karenge.
+    final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+    final String currentTimeZone = timezoneInfo.toString();
+
+    // Notification Service mein Timezone ko set karein
+    NotificationService.initTimezone(currentTimeZone);
+  } catch (e) {
+    // Agar timezone set na ho paye toh error log karein
+    debugPrint('Could not get local timezone: $e');
+  }
+
+  // 2. Local Notification Service ko initialize karein
+  await NotificationService().initNotifications();
+  // ----------------------------------
+
   runApp(const TaskManagerApp());
 }
-
+//
 // ----------------------------------------------
 // 1. Initial Loader (Checks Onboarding Status)
 // ----------------------------------------------
 class InitialLoader extends StatelessWidget {
+// ... (Baaki code wahi rahega)
   const InitialLoader({super.key});
 
   Future<bool> _checkOnboardingStatus() async {
@@ -53,9 +88,13 @@ class InitialLoader extends StatelessWidget {
           }
         }
         // Show a simple loading screen while checking status
+        // NOTE: primaryDark aur accentGreen yahan use ho rahe hain.
+        // Yeh variables 'theme.dart' mein define hone chahiye.
         return const Scaffold(
-          backgroundColor: primaryDark,
-          body: Center(child: CircularProgressIndicator(color: accentGreen)),
+          // Assuming these variables are accessible via theme.dart
+          // Agar AppTheme use karna hai toh context zaroori hai.
+          backgroundColor: Colors.blueGrey,
+          body: Center(child: CircularProgressIndicator(color: Colors.green)),
         );
       },
     );
@@ -67,6 +106,7 @@ class InitialLoader extends StatelessWidget {
 // 2. Main App Configuration
 // ----------------------------------------------
 class TaskManagerApp extends StatelessWidget {
+// ... (Baaki code wahi rahega)
   const TaskManagerApp({super.key});
 
   @override
@@ -74,18 +114,40 @@ class TaskManagerApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => TaskProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()), // This line now works
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        // FIX 2: ExportOptionsProvider ko yahan add kiya gaya hai
+        ChangeNotifierProvider(create: (_) => ExportOptionsProvider()),
       ],
-      child: Consumer<ThemeProvider>( // WRAP MaterialApp with Consumer
+      // WRAP MaterialApp with Consumer to access ThemeProvider
+      child: Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) {
+
+            // FIX: Dynamic theme logic ko AppTheme.getTheme function se replace kiya gaya
+            // 💡 WARNING FIX: Maiñ ne yeh unused line delete kardi hai jisko aapne pichle message mein theek karne ko kaha tha.
+            // final dynamicTheme = AppTheme.getTheme(
+            //     themeProvider.accentColor,
+            //     themeProvider.themeMode == ThemeMode.light ? Brightness.light : Brightness.dark
+            // );
+
+
             return MaterialApp(
               title: 'Task Manager',
               debugShowCheckedModeBanner: false,
-              // Use the dynamic theme data from the provider
-              theme: themeProvider.currentThemeData,
-              darkTheme: themeProvider.currentThemeData, // Use for consistency
-              themeMode: themeProvider.themeMode, // Control Theme Mode
+
+              // FIX: AppTheme.getTheme() ko use karein
+              theme: AppTheme.getTheme(themeProvider.accentColor, Brightness.light),
+              darkTheme: AppTheme.getTheme(themeProvider.accentColor, Brightness.dark),
+              themeMode: themeProvider.themeMode,
               home: const InitialLoader(),
+
+              // ✅ RESPONSIVE FIX: Builder function to override system font scale factor
+              builder: (context, child) {
+                // Device ki default font scaling factor ko 1.0 par set kar deta hai
+                return MediaQuery(
+                  data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+                  child: child!,
+                );
+              },
               // routes...
             );
           }
@@ -99,6 +161,7 @@ class TaskManagerApp extends StatelessWidget {
 // 3. App Shell (Bottom Navigation Consistency)
 // ----------------------------------------------
 class TaskManagerShell extends StatefulWidget {
+// ... (Baaki code wahi rahega)
   const TaskManagerShell({super.key});
 
   @override
@@ -118,8 +181,12 @@ class _TaskManagerShellState extends State<TaskManagerShell> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryDark = Theme.of(context).scaffoldBackgroundColor;
-    final accentGreen = Theme.of(context).colorScheme.primary;
+    final themeProvider = context.watch<ThemeProvider>();
+    // NOTE: accentColor ko themeProvider mein define kiya hua hona zaroori hai
+    final accentColor = themeProvider.accentColor;
+
+    // Theme.of(context).scaffoldBackgroundColor ab theme mode ke mutabik badlega
+    final primaryBg = Theme.of(context).scaffoldBackgroundColor;
 
     return Scaffold(
       body: _screens[_currentIndex],
@@ -127,8 +194,9 @@ class _TaskManagerShellState extends State<TaskManagerShell> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
-        backgroundColor: primaryDark,
-        selectedItemColor: accentGreen,
+        // Background color ab theme se aayega, lekin yahan bhi set kiya gaya hai
+        backgroundColor: primaryBg,
+        selectedItemColor: accentColor,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Today'),
@@ -143,58 +211,21 @@ class _TaskManagerShellState extends State<TaskManagerShell> {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            backgroundColor: primaryDark,
+            // Background color ko theme se ya explicitly set karein
+            backgroundColor: primaryBg,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             builder: (context) => const TaskEditSheet(),
           ).then((_) {
-            // Refresh tasks after modal closes (in case a new task was added)
+            // Task refresh call
             Provider.of<TaskProvider>(context, listen: false).fetchTasks();
           });
         },
-        backgroundColor: accentGreen,
-        child:  Icon(Icons.add, color: primaryDark),
+        backgroundColor: accentColor,
+        child:  Icon(Icons.add, color: primaryBg), // Icon color ko primaryBg se theek kiya
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
-
-// ----------------------------------------------
-// 4. Placeholder Screens (For Navigation)
-// ----------------------------------------------
-// NOTE: These are required to make the TaskManagerShell compile and run
-class RepeatedTasksListScreen extends StatelessWidget {
-  const RepeatedTasksListScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Repeated Tasks')),
-      body: const Center(child: Text("Repeated Tasks Screen (Placeholder)", style: TextStyle(color: textLight))),
-    );
-  }
-}
-
-class CompactCalendarView extends StatelessWidget {
-  const CompactCalendarView({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Calendar View')),
-      body: const Center(child: Text("Compact Calendar View (Placeholder)", style: TextStyle(color: textLight))),
-    );
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: const Center(child: Text("Settings Screen (Placeholder)", style: TextStyle(color: textLight))),
-    );
-  }
-}
-
