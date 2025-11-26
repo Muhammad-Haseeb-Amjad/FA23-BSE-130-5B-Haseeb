@@ -30,55 +30,39 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
       Expanded(child: Row(
       children: [
-          Expanded(child: Container(
-          margin: EdgeInsets.all(15.0),
-      decoration: BoxDecoration(
-        color: Color(0xFF1D1E33),
-        borderRadius: BorderRadius.circular(10.0),
-
-      ),
-    ),),
-    Expanded(child: Container(
-    margin: EdgeInsets.all(15.0),
-    decoration: BoxDecoration(
-    color: Color(0xFF1D1E33),
-    borderRadius: BorderRadius.circular(10.0),
-
-    ),
-    ),),
+          Expanded(
+            child: new repeatcontainer(
+                colors: Color(0xFF1D1E33)
+            ),
+          ),
+    Expanded(child: new repeatcontainer(colors: Color(0xFF1D1E33)),),
     ],
     ),),
-    Expanded(child: Container(
-    margin: EdgeInsets.all(15.0),
-    decoration: BoxDecoration(
-    color: Color(0xFF1D1E33),
-    borderRadius: BorderRadius.circular(10.0),
-
-    ),
-    ),),
+    Expanded(child: new repeatcontainer(colors: Color(0xFF1D1E33)),),
     Expanded(child: Row(
     children: [
-    Expanded(child: Container(
-    margin: EdgeInsets.all(15.0),
-    decoration: BoxDecoration(
-    color: Color(0xFF1D1E33),
-    borderRadius: BorderRadius.circular(10.0),
-
-    ),
-    ),),
-    Expanded(child: Container(
-      margin: EdgeInsets.all(15.0),
-      decoration: BoxDecoration(
-        color: Color(0xFF1D1E33),
-        borderRadius: BorderRadius.circular(10.0),
-
-      ),
-    ),),
+    Expanded(child: new repeatcontainer(colors: Color(0xFF1D1E33)),),
+    Expanded(child: new repeatcontainer(colors: Color(0xFF1D1E33)),),
     ],
     ),),
     ],
     )
     // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+}
+
+class repeatcontainer extends StatelessWidget {
+  repeatcontainer({required this.colors});
+  final Color colors;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+              margin: EdgeInsets.all(15.0),
+          decoration: BoxDecoration(
+            color: colors,
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+        );
   }
 }
