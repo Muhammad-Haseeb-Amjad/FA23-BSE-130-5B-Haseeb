@@ -19,19 +19,20 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  Color maleColor = deActiveColor;
-  Color femaleColor = deActiveColor;
-
-  void updateColor(Gender gendertype){
-    if(gendertype==Gender.male){
-      maleColor = activeColor;
-      femaleColor = deActiveColor;
-    }
-    if(gendertype==Gender.female){
-      femaleColor = activeColor;
-      maleColor = deActiveColor;
-    }
-  }
+  Gender selectGender=Gender.male;
+  // Color maleColor = deActiveColor;
+  // Color femaleColor = deActiveColor;
+  //
+  // void updateColor(Gender gendertype){
+  //   if(gendertype==Gender.male){
+  //     maleColor = activeColor;
+  //     femaleColor = deActiveColor;
+  //   }
+  //   if(gendertype==Gender.female){
+  //     femaleColor = activeColor;
+  //     maleColor = deActiveColor;
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -51,11 +52,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: GestureDetector(
                       onTap: (){
                         setState(() {
-                          updateColor(Gender.male);
+                          selectGender=Gender.male;
                         });
                       },
                       child:  repeatcontainer(
-                        colors: maleColor,
+                        colors: selectGender==Gender.male? activeColor:deActiveColor ,
                         cardWidget: repeatIcon(
                           icondata: FontAwesomeIcons.male,
                           label: 'Male',
@@ -66,11 +67,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   Expanded(child: GestureDetector(
                     onTap: (){
                       setState(() {
-                        updateColor(Gender.female);
+                        selectGender=Gender.female;
                       });
                     },
                     child: repeatcontainer(
-                      colors: femaleColor,
+                      colors: selectGender==Gender.female? activeColor:deActiveColor,
                       cardWidget: repeatIcon(
                         icondata: FontAwesomeIcons.female,
                         label: 'Female',
