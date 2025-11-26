@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'Icontextfile.dart';
+import 'Containerfile.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -63,44 +65,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class repeatIcon extends StatelessWidget {
-  repeatIcon({required this.icondata, required this.label});
-  final IconData icondata;
-  final String label;
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-    children:[
-      Icon(
-        icondata,
-        size: 40.0,
-          ),
-        SizedBox(
-          height: 15.0,
-        ),
-        Text(label,style: TextStyle(
-          fontSize: 18.0,
-          color: Color(0xFF8D8E98)
-        ),)
-    ],
-        );
-  }
-}
 
-class repeatcontainer extends StatelessWidget {
-  repeatcontainer({required this.colors, this.cardWidget});
-  final Color colors;
-  final Widget? cardWidget;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-              margin: EdgeInsets.all(15.0),
-          child: cardWidget,
-          decoration: BoxDecoration(
-            color: colors,
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-        );
-  }
-}
+
+
