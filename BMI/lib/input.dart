@@ -49,35 +49,34 @@ class _MyHomePageState extends State<MyHomePage> {
               Expanded(child: Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
-                      onTap: (){
-                        setState(() {
-                          selectGender=Gender.male;
-                        });
-                      },
                       child:  repeatcontainer(
+                        onPressed: (){
+                          setState(() {
+                            selectGender=Gender.male;
+                          });
+                        },
                         colors: selectGender==Gender.male? activeColor:deActiveColor ,
                         cardWidget: repeatIcon(
                           icondata: FontAwesomeIcons.male,
                           label: 'Male',
                         ),
                       ),
-                    ),
+
                   ),
-                  Expanded(child: GestureDetector(
-                    onTap: (){
-                      setState(() {
-                        selectGender=Gender.female;
-                      });
-                    },
+                  Expanded(
                     child: repeatcontainer(
+                      onPressed: (){
+                        setState(() {
+                          selectGender=Gender.female;
+                        });
+                      },
                       colors: selectGender==Gender.female? activeColor:deActiveColor,
                       cardWidget: repeatIcon(
                         icondata: FontAwesomeIcons.female,
                         label: 'Female',
                       ),
                     ),
-                  ),),
+                ),
                 ],
               ),),
               Expanded(child:  repeatcontainer(colors: Color(0xFF1D1E33)),),
