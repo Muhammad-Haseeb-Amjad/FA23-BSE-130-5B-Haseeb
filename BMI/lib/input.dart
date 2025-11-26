@@ -4,6 +4,10 @@ import 'Icontextfile.dart';
 import 'Containerfile.dart';
 const activeColor = Color(0xFF1D1E33);
 const deActiveColor = Color(0xFF111328);
+enum Gender{
+  male,
+  female,
+}
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -18,12 +22,12 @@ class _MyHomePageState extends State<MyHomePage> {
   Color maleColor = deActiveColor;
   Color femaleColor = deActiveColor;
 
-  void updateColor(int gender){
-    if(gender==1){
+  void updateColor(Gender gendertype){
+    if(gendertype==Gender.male){
       maleColor = activeColor;
       femaleColor = deActiveColor;
     }
-    if(gender==2){
+    if(gendertype==Gender.female){
       femaleColor = activeColor;
       maleColor = deActiveColor;
     }
@@ -47,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: GestureDetector(
                       onTap: (){
                         setState(() {
-                          updateColor(1);
+                          updateColor(Gender.male);
                         });
                       },
                       child:  repeatcontainer(
@@ -62,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   Expanded(child: GestureDetector(
                     onTap: (){
                       setState(() {
-                        updateColor(2);
+                        updateColor(Gender.female);
                       });
                     },
                     child: repeatcontainer(
