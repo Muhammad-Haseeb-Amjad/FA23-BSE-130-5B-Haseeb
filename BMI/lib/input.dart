@@ -23,6 +23,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Gender selectGender=Gender.male;
   int sliderHeight=180;
   int sliderWeight=60;
+  int sliderAge=20;
   // Color maleColor = deActiveColor;
   // Color femaleColor = deActiveColor;
   //
@@ -137,17 +138,98 @@ class _MyHomePageState extends State<MyHomePage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            
+                         RoundIcon(
+                           iconData: FontAwesomeIcons.minus,
+                           onPress: (){
+                             setState(() {
+                               sliderWeight--;
+                             });
+                           },
+                         ),
+                            SizedBox(width: 10.0,),
+                            RoundIcon(
+                              iconData: FontAwesomeIcons.plus,
+                              onPress: (){
+                                setState(() {
+                                  sliderWeight++;
+                                });
+                              },
+                            ),
+
                           ],
                         ),
                       ],
                     ),
                   ),),
-                  Expanded(child:  repeatcontainer(colors: Color(0xFF1D1E33)),),
+                  Expanded(child:  repeatcontainer(
+                      colors: Color(0xFF1D1E33),
+                    cardWidget: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Age',
+                          style: KLabelStyle,
+                        ),
+                        Text(
+                          sliderAge.toString(),
+                          style: kNumberStyle,
+
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            RoundIcon(
+                              iconData: FontAwesomeIcons.minus,
+                              onPress: (){
+                                setState(() {
+                                  sliderAge--;
+                                });
+                              },
+                            ),
+                            SizedBox(width: 10.0,),
+                            RoundIcon(
+                              iconData: FontAwesomeIcons.plus,
+                              onPress: (){
+                                setState(() {
+                                  sliderAge++;
+                                });
+                              },
+                            ),
+
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),),
                 ],
               ),),
+              Container(
+                color: Color(0xFFEB1555),
+                margin: EdgeInsets.only(top: 10.0),
+                width: double.infinity,
+                height: 80.0,
+              ),
             ]
         )
+    );
+  }
+}
+class RoundIcon extends StatelessWidget{
+  RoundIcon({required this.iconData,required this.onPress });
+  final IconData iconData;
+  final VoidCallback? onPress;
+  @override
+  Widget build(BuildContext context){
+    return RawMaterialButton(
+      child: Icon(iconData),
+      onPressed: onPress,
+      elevation: 6.0,
+      constraints: BoxConstraints.tightFor(
+        height: 56.0,
+        width: 56.0,
+      ),
+      shape: CircleBorder(),
+      fillColor: Color(0xFF4C4F5E),
     );
   }
 }
