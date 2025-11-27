@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'Icontextfile.dart';
 import 'Containerfile.dart';
 import 'result.dart';
+import 'calculator.dart';
 const activeColor = Color(0xFF1D1E33);
 const deActiveColor = Color(0xFF111328);
 enum Gender{
@@ -49,7 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
               .inversePrimary,
           title: Text(widget.title),
         ),
-        body: Column(
+        body:   Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(child: Row(
@@ -205,8 +206,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),),
               GestureDetector(
+
                 onTap: (){
-                Navigator.push(context,MaterialPageRoute(builder: (context)=>Result()));
+                  CalculatorBrain calu=CalculatorBrain(height:sliderHeight,weight:sliderWeight);
+                Navigator.push(context,MaterialPageRoute(builder: (context)=>Result(
+                bmiResult: calu.calculatorBMI(),
+               resultText: calu.getResult(),
+               interpretation: calu.getInterpretation(),
+    )));
                 },
                 child: Container(
                   child: Center(
@@ -222,6 +229,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ]
         )
+
     );
   }
 }

@@ -3,6 +3,10 @@ import 'package:bmi/input.dart';
 import 'package:flutter/material.dart';
 import 'Containerfile.dart';
 class Result extends StatelessWidget{
+  Result({required this.interpretation,required this.bmiResult,required this.resultText});
+  final String interpretation;
+  final String bmiResult;
+  final String resultText;
   @override
   Widget build(BuildContext context){
     return Scaffold(
@@ -31,13 +35,13 @@ class Result extends StatelessWidget{
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text('Normal'),
+                      Text(resultText),
                       Text(
-                          '18.3',
+                        bmiResult,
                         style: kNumberStyle,
                       ),
                       Text(
-                        'BMI is Low You Should have More Work',
+                        interpretation,
                         textAlign: TextAlign.center,
                         style: tstyle,
                       ),
@@ -47,8 +51,9 @@ class Result extends StatelessWidget{
             ),
             Expanded(
               child: GestureDetector(
+
               onTap: (){
-                Navigator.push(context,MaterialPageRoute(builder: (context)=>Result()));
+                Navigator.push(context,MaterialPageRoute(builder: (context)=>MyHomePage(title: 'BMI Calculator')));
               },
               child: Container(
                 child: Center(
