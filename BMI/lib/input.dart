@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'Icontextfile.dart';
 import 'Containerfile.dart';
+import 'result.dart';
 const activeColor = Color(0xFF1D1E33);
 const deActiveColor = Color(0xFF111328);
 enum Gender{
@@ -203,11 +204,21 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),),
                 ],
               ),),
-              Container(
-                color: Color(0xFFEB1555),
-                margin: EdgeInsets.only(top: 10.0),
-                width: double.infinity,
-                height: 80.0,
+              GestureDetector(
+                onTap: (){
+                Navigator.push(context,MaterialPageRoute(builder: (context)=>Result()));
+                },
+                child: Container(
+                  child: Center(
+                      child: Text(
+                        'Calculate',
+                        style: buttonstyle,
+                      )),
+                  color: Color(0xFFEB1555),
+                  margin: EdgeInsets.only(top: 10.0),
+                  width: double.infinity,
+                  height: 80.0,
+                ),
               ),
             ]
         )

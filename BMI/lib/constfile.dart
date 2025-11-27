@@ -7,3 +7,7 @@ const kNumberStyle=TextStyle(
 fontSize: 40.0,
 fontWeight: FontWeight.w900,
 );
+const buttonstyle=TextStyle(
+  fontSize: 25.0,
+  fontWeight: FontWeight.bold,
+);
