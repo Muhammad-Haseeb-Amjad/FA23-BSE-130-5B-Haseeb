@@ -22,6 +22,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   Gender selectGender=Gender.male;
   int sliderHeight=180;
+  int sliderWeight=60;
   // Color maleColor = deActiveColor;
   // Color femaleColor = deActiveColor;
   //
@@ -119,7 +120,29 @@ class _MyHomePageState extends State<MyHomePage> {
               ),),
               Expanded(child: Row(
                 children: [
-                  Expanded(child: repeatcontainer(colors: Color(0xFF1D1E33)),),
+                  Expanded(child: repeatcontainer(
+                      colors: Color(0xFF1D1E33),
+                    cardWidget: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Weight',
+                          style: KLabelStyle,
+                        ),
+                        Text(
+                          sliderWeight.toString(),
+                          style: kNumberStyle,
+
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),),
                   Expanded(child:  repeatcontainer(colors: Color(0xFF1D1E33)),),
                 ],
               ),),
