@@ -1,3 +1,4 @@
+import 'package:bmi/constfile.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'Icontextfile.dart';
@@ -45,6 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
           title: Text(widget.title),
         ),
         body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(child: Row(
                 children: [
@@ -79,7 +81,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 ],
               ),),
-              Expanded(child:  repeatcontainer(colors: Color(0xFF1D1E33)),),
+              Expanded(child:  repeatcontainer(
+                  colors: Color(0xFF1D1E33),
+                cardWidget: Column(
+                  children: [
+                    Text('Height',style: KLabelStyle,),
+                  ],
+                ),
+              ),),
               Expanded(child: Row(
                 children: [
                   Expanded(child: repeatcontainer(colors: Color(0xFF1D1E33)),),
