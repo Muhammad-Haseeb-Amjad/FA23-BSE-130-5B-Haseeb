@@ -11,3 +11,11 @@ const buttonstyle=TextStyle(
   fontSize: 25.0,
   fontWeight: FontWeight.bold,
 );
+const titlestyle=TextStyle(
+  fontSize: 50.0,
+  fontWeight: FontWeight.bold,
+);
+const tstyle=TextStyle(
+  fontSize: 20.0,
+  fontWeight: FontWeight.bold,
+);
