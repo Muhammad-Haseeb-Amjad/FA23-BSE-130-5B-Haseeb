@@ -1,0 +1,55 @@
+name: task_manager
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.2+3
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  sqflite: ^2.2.8+4
+  audioplayers: ^6.0.0
+  path_provider: ^2.0.15
+  provider: ^6.0.5 # For State Management
+  intl: ^0.18.1 # For date formatting
+  csv: ^5.0.1 # To generate CSV content
+  mailer: ^6.0.0 # To send email (requires setup, simplified here)
+  share_plus: ^7.0.2 # To share the exported file
+  shared_preferences: ^2.2.0
+  flutter_local_notifications:
+  file_picker: ^10.3.3
+  pdf: ^3.10.4
+  printing: ^5.11.1
+  url_launcher:
+  permission_handler: ^11.3.1
+  timezone: ^0.9.3
+  flutter_timezone: ^5.0.1  # Latest stable version
+  in_app_review: ^2.0.9
+  google_mobile_ads: ^5.2.0  # AdMob integration
+
+  # Note: Actual email sending (mailer) requires a dedicated server setup,
+  # so we will focus on generating the file and using share_plus for sending.
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/branding/task_manager_logo.png
+  android_adaptive_icon_background: "#FF38B28F"
+  android_adaptive_icon_foreground: assets/branding/task_manager_logo.png
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/sounds/chime.mp3
+    - assets/sounds/bell.mp3
+    - assets/sounds/magic_wand.mp3
+    - assets/sounds/echo_pulse.mp3
+    - assets/branding/task_manager_logo.png

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../theme.dart';
 import '../providers/task_provider.dart';
 import '../widgets/task_card.dart';
@@ -8,6 +10,8 @@ import 'task_details_screen.dart';
 import '../models/task.dart';
 import 'settings_screen.dart';
 import 'task_edit_sheet.dart';
+import '../services/rate_app_service.dart';
+import '../services/ad_service.dart';
 
 class TodayTasksScreen extends StatefulWidget {
   const TodayTasksScreen({super.key});
@@ -22,13 +26,35 @@ class _TodayTasksScreenState extends State<TodayTasksScreen>
   final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
   bool _wasPaused = false;
+  BannerAd? _bannerAd;
+  bool _isBannerLoaded = false;
+  
+  static const String _firstLaunchTimeKey = 'first_launch_timestamp';
+  static const String _hasRatedKey = 'user_has_rated_app';
+  static const Duration _ratingPromptDelay = Duration(minutes: 5);
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _searchController.addListener(_onSearchChanged);
+    _scheduleRatingPrompt();
+    _loadBannerAd();
   }
+
+  void _loadBannerAd() {
+    _bannerAd = AdService().createBannerAd(
+      onLoaded: () {
+        setState(() {
+          _isBannerLoaded = true;
+        });
+      },
+      onFailed: (error) {
+        debugPrint('Banner ad failed: $error');
+      },
+    );
+  }
+
 
   void _onSearchChanged() {
     setState(() {
@@ -42,6 +68,7 @@ class _TodayTasksScreenState extends State<TodayTasksScreen>
     _searchFocusNode.dispose();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -92,6 +119,59 @@ class _TodayTasksScreenState extends State<TodayTasksScreen>
     if (pendingTasks.isEmpty) return;
 
     await taskProvider.showTodayUnlockReminder(pendingTasks);
+  }
+
+  Future<void> _scheduleRatingPrompt() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Check if user has already rated
+    final hasRated = prefs.getBool(_hasRatedKey) ?? false;
+    if (hasRated) return;
+    
+    // Get or set first launch timestamp
+    final firstLaunchTime = prefs.getInt(_firstLaunchTimeKey);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    
+    if (firstLaunchTime == null) {
+      // First time opening the app after onboarding
+      await prefs.setInt(_firstLaunchTimeKey, now);
+      
+      // Schedule rating dialog after 5 minutes
+      Future.delayed(_ratingPromptDelay, () {
+        if (mounted) {
+          _showRatingPrompt();
+        }
+      });
+    } else {
+      // Check if 5 minutes have passed since first launch
+      final elapsed = Duration(milliseconds: now - firstLaunchTime);
+      
+      if (elapsed >= _ratingPromptDelay) {
+        // Show immediately if 5 minutes already passed
+        _showRatingPrompt();
+      } else {
+        // Schedule for remaining time
+        final remaining = _ratingPromptDelay - elapsed;
+        Future.delayed(remaining, () {
+          if (mounted) {
+            _showRatingPrompt();
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _showRatingPrompt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasRated = prefs.getBool(_hasRatedKey) ?? false;
+    
+    if (hasRated || !mounted) return;
+    
+    // Show rating dialog
+    await RateAppService.instance.showRatingDialog(context, allowSkip: true);
+    
+    // Mark as rated so it never shows again
+    await prefs.setBool(_hasRatedKey, true);
   }
 
   @override
@@ -145,7 +225,7 @@ class _TodayTasksScreenState extends State<TodayTasksScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Good Morning, Haseeb!',
+                        'Good Morning!',
                         style: TextStyle(
                           color: textColor,
                           fontSize: 30,
@@ -269,23 +349,24 @@ class _TodayTasksScreenState extends State<TodayTasksScreen>
                         if (direction == DismissDirection.startToEnd) {
                           // Use new toggle with repeat rollover
                           await taskProvider.toggleTaskCompletion(task);
-                          final bool isRepeating = task.repeat != null &&
+                          final bool hasRepeatField = task.repeat != null &&
                               task.repeat!.isNotEmpty &&
                               task.repeat != 'Does not repeat';
+                          final bool isRepeating = hasRepeatField && (task.isRepeatingEnabled == true);
                           if (isRepeating) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(
                                   'Task completed. Next occurrence scheduled.',
                                 ),
-                                duration: Duration(seconds: 2),
+                                duration: Duration(milliseconds: 800),
                               ),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Task marked complete.'),
-                                duration: Duration(seconds: 2),
+                                duration: Duration(milliseconds: 800),
                               ),
                             );
                           }
@@ -344,6 +425,12 @@ class _TodayTasksScreenState extends State<TodayTasksScreen>
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      bottomNavigationBar: _isBannerLoaded && _bannerAd != null
+          ? SizedBox(
+              height: _bannerAd!.size.height.toDouble(),
+              child: AdWidget(ad: _bannerAd!),
+            )
+          : null,
     );
   }
 
