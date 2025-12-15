@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Laravel Backend Server",
+			"type": "shell",
+			"command": "cd C:\\Users\\Atif\\Desktop\\chatter\\chatter_backend; php artisan serve --host=0.0.0.0 --port=8001",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}
