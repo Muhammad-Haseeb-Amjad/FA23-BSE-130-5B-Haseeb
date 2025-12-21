@@ -1,0 +1,118 @@
+import 'package:flutter/material.dart';
+import '../core/services/supabase_service.dart';
+import '../core/theme/app_theme.dart';
+
+class AddEditCustomerScreen extends StatefulWidget {
+  final Map<String, dynamic>? customer;
+  const AddEditCustomerScreen({super.key, this.customer});
+
+  @override
+  State<AddEditCustomerScreen> createState() => _AddEditCustomerScreenState();
+}
+
+class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _name = TextEditingController(text: widget.customer?['name'] ?? '');
+  late final TextEditingController _phone = TextEditingController(text: widget.customer?['phone'] ?? '');
+  late final TextEditingController _email = TextEditingController(text: widget.customer?['email'] ?? '');
+  late final TextEditingController _address = TextEditingController(text: widget.customer?['address'] ?? '');
+  late final TextEditingController _points = TextEditingController(text: widget.customer?['points']?.toString() ?? '0');
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _phone.dispose();
+    _email.dispose();
+    _address.dispose();
+    _points.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    final data = {
+      'name': _name.text.trim(),
+      'phone': _phone.text.trim(),
+      'email': _email.text.trim(),
+      'address': _address.text.trim(),
+      'points': int.tryParse(_points.text) ?? 0,
+    };
+    try {
+      final client = SupabaseService.instance.client;
+      if (widget.customer == null) {
+        await client.from('customers').insert(data);
+      } else {
+        await client.from('customers').update(data).eq('id', widget.customer!['id']);
+      }
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.customer == null ? 'Add Customer' : 'Edit Customer')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _name,
+                decoration: const InputDecoration(labelText: 'Customer Name'),
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _phone,
+                decoration: const InputDecoration(labelText: 'Phone'),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _email,
+                decoration: const InputDecoration(labelText: 'Email'),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return null;
+                  if (!v.contains('@')) return 'Invalid email';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _address,
+                decoration: const InputDecoration(labelText: 'Address'),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _points,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Loyalty Points'),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Save'),
+                ),
+              ),
+              TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel', style: TextStyle(color: AppColors.muted))),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
