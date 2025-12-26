@@ -76,7 +76,7 @@ class _MyAppState extends State<MyApp> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: SettingsService.instance.themeMode,
       builder: (_, mode, __) => MaterialApp.router(
-        title: 'BreadBox POS',
+        title: 'Bread Box',
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(),
         darkTheme: ThemeData.dark(useMaterial3: false),

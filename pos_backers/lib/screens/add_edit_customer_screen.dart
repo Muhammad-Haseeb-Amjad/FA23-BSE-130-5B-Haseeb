@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+import '../core/services/connectivity_service.dart';
+import '../core/services/local_database_service.dart';
 import '../core/services/supabase_service.dart';
 import '../core/theme/app_theme.dart';
 
@@ -18,9 +21,14 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
   late final TextEditingController _address = TextEditingController(text: widget.customer?['address'] ?? '');
   late final TextEditingController _points = TextEditingController(text: widget.customer?['points']?.toString() ?? '0');
   bool _saving = false;
+  bool _online = true;
+  late final _connSub = ConnectivityService.instance.connectivityStream.listen((online) {
+    setState(() => _online = online);
+  });
 
   @override
   void dispose() {
+    _connSub.cancel();
     _name.dispose();
     _phone.dispose();
     _email.dispose();
@@ -37,16 +45,50 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
       'phone': _phone.text.trim(),
       'email': _email.text.trim(),
       'address': _address.text.trim(),
-      'points': int.tryParse(_points.text) ?? 0,
+      'loyalty_points': int.tryParse(_points.text) ?? 0,
     };
+    
     try {
-      final client = SupabaseService.instance.client;
-      if (widget.customer == null) {
-        await client.from('customers').insert(data);
-      } else {
-        await client.from('customers').update(data).eq('id', widget.customer!['id']);
+      final id = widget.customer?['id'] ?? const Uuid().v4();
+      bool savedToSupabase = false;
+      
+      // Try to save to Supabase when online
+      if (_online) {
+        try {
+          final client = SupabaseService.instance.client;
+          if (widget.customer == null) {
+            await client.from('customers').insert(data);
+          } else {
+            await client.from('customers').update(data).eq('id', widget.customer!['id']);
+          }
+          savedToSupabase = true;
+        } catch (e) {
+          print('Supabase save failed: $e');
+        }
       }
+      
+      // Always save to local database
+      final localData = {
+        'id': id.toString(),
+        ...data,
+        'synced': savedToSupabase ? 1 : 0,
+        'created_at': widget.customer?['created_at'] ?? DateTime.now().toIso8601String(),
+      };
+      
+      if (widget.customer == null) {
+        await LocalDatabaseService.instance.insertCustomer(localData);
+      } else {
+        await LocalDatabaseService.instance.update('customers', localData, id.toString());
+      }
+      
       if (!mounted) return;
+      
+      if (!_online || !savedToSupabase) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Customer saved locally. Will sync when online.'), duration: Duration(seconds: 2)),
+        );
+      }
+      
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:uuid/uuid.dart';
 import '../core/services/connectivity_service.dart';
+import '../core/services/local_database_service.dart';
 import '../core/services/offline_queue_service.dart';
 import '../core/services/supabase_service.dart';
 import '../core/theme/app_theme.dart';
@@ -36,26 +38,45 @@ class _PosPaymentScreenState extends State<PosPaymentScreen> {
   Future<void> _complete() async {
     setState(() => _processing = true);
     final discount = (widget.subtotal + widget.tax) - widget.total;
+    final id = const Uuid().v4();
     final sale = {
+      'id': id,
       'total': widget.total,
       'subtotal': widget.subtotal,
       'tax': widget.tax,
       'discount': discount,
-      'items': widget.cart,
+      'items': widget.cart.toString(),
       'method': _method,
       'currency_symbol': widget.currencySymbol,
       'currency_code': widget.currencyCode,
       'created_at': DateTime.now().toIso8601String(),
     };
+    
     try {
-      if (_offline) {
-        await OfflineQueueService.instance.enqueueSale(sale);
-      } else {
-        await SupabaseService.instance.client.from('sales').insert(sale);
+      bool savedToSupabase = false;
+      
+      // Try to save to Supabase when online
+      if (!_offline) {
+        try {
+          await SupabaseService.instance.client.from('sales').insert(sale);
+          savedToSupabase = true;
+        } catch (e) {
+          print('Supabase save failed: $e');
+        }
       }
+      
+      // Always save to local database
+      await LocalDatabaseService.instance.insertSale({
+        ...sale,
+        'synced': savedToSupabase ? 1 : 0,
+      });
+      
       await _shareReceipt(sale);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_offline ? 'Saved offline. Will sync when online.' : 'Sale recorded successfully')));
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(savedToSupabase ? 'Sale recorded successfully' : 'Saved offline. Will sync when online.')),
+      );
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
