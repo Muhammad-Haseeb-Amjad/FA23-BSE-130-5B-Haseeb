@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+import '../core/services/connectivity_service.dart';
+import '../core/services/local_database_service.dart';
 import '../core/services/supabase_service.dart';
 import '../core/theme/app_theme.dart';
 
@@ -23,6 +26,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   late bool _lowStockAlert;
   late bool _expiryAlert;
   bool _saving = false;
+  bool _online = true;
+  late final _connSub = ConnectivityService.instance.connectivityStream.listen((online) {
+    setState(() => _online = online);
+  });
 
   @override
   void initState() {
@@ -41,6 +48,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
   @override
   void dispose() {
+    _connSub.cancel();
     _name.dispose();
     _category.dispose();
     _barcode.dispose();
@@ -67,14 +75,50 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       'low_stock_alert': _lowStockAlert,
       'expiry_alert': _expiryAlert,
     };
+    
     try {
-      final client = SupabaseService.instance.client;
-      if (widget.product == null) {
-        await client.from('products').insert(data);
-      } else {
-        await client.from('products').update(data).eq('id', widget.product!['id']);
+      final id = widget.product?['id'] ?? const Uuid().v4();
+      bool savedToSupabase = false;
+      
+      // Try to save to Supabase when online
+      if (_online) {
+        try {
+          final client = SupabaseService.instance.client;
+          if (widget.product == null) {
+            await client.from('products').insert(data);
+          } else {
+            await client.from('products').update(data).eq('id', widget.product!['id']);
+          }
+          savedToSupabase = true;
+        } catch (e) {
+          // Supabase failed, continue with local save
+          print('Supabase save failed: $e');
+        }
       }
+      
+      // Always save to local database
+      final localData = {
+        'id': id.toString(),
+        ...data,
+        'synced': savedToSupabase ? 1 : 0,
+        'created_at': widget.product?['created_at'] ?? DateTime.now().toIso8601String(),
+      };
+      
+      if (widget.product == null) {
+        await LocalDatabaseService.instance.insertProduct(localData);
+      } else {
+        await LocalDatabaseService.instance.update('products', localData, id.toString());
+      }
+      
       if (!mounted) return;
+      
+      // Show appropriate message
+      if (!_online || !savedToSupabase) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Product saved locally. Will sync when online.'), duration: Duration(seconds: 2)),
+        );
+      }
+      
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;

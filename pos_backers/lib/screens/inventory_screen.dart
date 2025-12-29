@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/services/connectivity_service.dart';
+import '../core/services/local_database_service.dart';
 import '../core/services/supabase_service.dart';
 import '../core/theme/app_theme.dart';
 import '../widgets/offline_banner.dart';
@@ -24,8 +25,29 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _load() async {
-    final res = await SupabaseService.instance.client.from('products').select('id, name, category, quantity');
-    return List<Map<String, dynamic>>.from(res);
+    try {
+      if (!_offline) {
+        try {
+          final res = await SupabaseService.instance.client.from('products').select('id, name, category, quantity');
+          final products = List<Map<String, dynamic>>.from(res);
+          
+          // Cache to local database
+          for (final product in products) {
+            await LocalDatabaseService.instance.insertProduct({...product, 'synced': 1});
+          }
+          
+          return products;
+        } catch (e) {
+          print('Supabase fetch failed, loading from local DB: $e');
+        }
+      }
+      
+      // Load from local database
+      return await LocalDatabaseService.instance.query('products');
+    } catch (e) {
+      print('Error loading inventory: $e');
+      return [];
+    }
   }
 
   @override

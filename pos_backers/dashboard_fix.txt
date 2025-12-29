@@ -1,0 +1,36 @@
+The issue: Dashboard counts products from Supabase only (missing unsynced local products)
+The fix: Always load products from local database to include all products
+
+In dashboard_screen.dart, around line 100-137, replace the product loading section with:
+
+    try {
+      // Always load from local database to include unsynced products
+      final items = await LocalDatabaseService.instance.query('products');
+      totalProducts = items.length;
+      lowStock = items.where((p) => (p['quantity'] ?? 0) <= 5).length;
+      
+      // Sort by quantity descending for best sellers
+      final sortedItems = List<Map<String, dynamic>>.from(items);
+      sortedItems.sort((a, b) => ((b['quantity'] ?? 0) as int).compareTo((a['quantity'] ?? 0) as int));
+      best = sortedItems.take(3).map<Map<String, dynamic>>((p) => {
+            'name': p['name'],
+            'sold': p['quantity'] ?? 0,
+            'price': p['price'] ?? 0,
+          }).toList();
+      
+      // Background sync: fetch from Supabase when online and cache
+      if (!_offline) {
+        try {
+          final client = SupabaseService.instance.client;
+          final supabaseItems = await client.from('products').select('id, name, category, quantity, price, cost_price');
+          // Cache Supabase products
+          for (final product in supabaseItems) {
+            await LocalDatabaseService.instance.insert('products', {...product, 'synced': 1});
+          }
+        } catch (e) {
+          print('Background product sync failed: $e');
+        }
+      }
+    } catch (e) {
+      print('Error loading products: $e');
+    }

@@ -1,6 +1,7 @@
 import 'package:barcode_scan2/barcode_scan2.dart';
 import 'package:flutter/material.dart';
 import '../core/services/connectivity_service.dart';
+import '../core/services/local_database_service.dart';
 import '../core/services/settings_service.dart';
 import '../core/services/supabase_service.dart';
 import '../core/theme/app_theme.dart';
@@ -48,12 +49,31 @@ class _PosScreenState extends State<PosScreen> {
 
   Future<void> _load() async {
     try {
-      final res = await SupabaseService.instance.client.from('products').select('id, name, price, quantity');
-      setState(() => _products = List<Map<String, dynamic>>.from(res));
+      List<Map<String, dynamic>> products;
+      
+      if (!_offline) {
+        try {
+          final res = await SupabaseService.instance.client.from('products').select('id, name, price, quantity');
+          products = List<Map<String, dynamic>>.from(res);
+          
+          // Cache to local database
+          for (final product in products) {
+            await LocalDatabaseService.instance.insertProduct({...product, 'synced': 1});
+          }
+        } catch (e) {
+          // Fall back to local database
+          products = await LocalDatabaseService.instance.query('products');
+        }
+      } else {
+        // Load from local database when offline
+        products = await LocalDatabaseService.instance.query('products');
+      }
+      
+      setState(() => _products = products);
       _recalculate();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not load products: $e')));
+      print('Error loading products: $e');
     }
   }
 
