@@ -23,9 +23,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
   bool _loading = false;
   bool _offline = false;
   List<Map<String, dynamic>> _rows = [];
-  late final _connSub = ConnectivityService.instance.connectivityStream.listen((
-    online,
-  ) {
+  late final _connSub = ConnectivityService.instance.connectivityStream.listen((online) {
     setState(() => _offline = !online);
   });
 
@@ -40,97 +38,57 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
     try {
       if (widget.type == 'Daily Sales' || widget.type == 'Monthly Sales') {
         List<Map<String, dynamic>> sales;
-
+        
         if (!_offline) {
           try {
             final client = SupabaseService.instance.client;
-            final res = await client
-                .from('sales')
-                .select('id, total, method, created_at')
-                .order('created_at', ascending: false);
+            final res = await client.from('sales').select('id, total, method, created_at').order('created_at', ascending: false);
             sales = List<Map<String, dynamic>>.from(res);
-
-            // Cache to local database for offline access
-            print('Caching ${sales.length} sales records to local database');
-            final db = LocalDatabaseService.instance;
-            for (final sale in sales) {
-              try {
-                await db.insert('sales', {...sale, 'synced': 1});
-              } catch (e) {
-                print('Error caching sale ${sale['id']}: $e');
-              }
-            }
           } catch (e) {
             print('Supabase fetch failed, loading from local DB: $e');
             sales = await LocalDatabaseService.instance.query('sales');
           }
         } else {
-          print('Loading sales from local database (offline mode)');
           sales = await LocalDatabaseService.instance.query('sales');
-          print('Found ${sales.length} sales records in local database');
         }
-
+        
         _rows = sales;
         if (_range != null) {
-          _rows = _rows.where((r) {
-            final date = DateTime.tryParse(r['created_at'] ?? '');
-            if (date == null) return false;
-            return !date.isBefore(_range!.start) && !date.isAfter(_range!.end);
-          }).toList();
+          _rows = _rows
+              .where((r) {
+                final date = DateTime.tryParse(r['created_at'] ?? '');
+                if (date == null) return false;
+                return !date.isBefore(_range!.start) && !date.isAfter(_range!.end);
+              })
+              .toList();
         }
       } else if (widget.type == 'Profit') {
         List<Map<String, dynamic>> sales;
         List<Map<String, dynamic>> products;
-
+        
         if (!_offline) {
           try {
             final client = SupabaseService.instance.client;
-            final res = await client
-                .from('sales')
-                .select('id, total, created_at');
+            final res = await client.from('sales').select('id, total, created_at');
             sales = List<Map<String, dynamic>>.from(res);
-            final prodRes = await client
-                .from('products')
-                .select('id, cost_price, quantity');
+            final prodRes = await client.from('products').select('id, cost_price, quantity');
             products = List<Map<String, dynamic>>.from(prodRes);
-
-            // Cache to local database
-            print(
-              'Caching ${sales.length} sales and ${products.length} products for profit report',
-            );
-            final db = LocalDatabaseService.instance;
-            for (final sale in sales) {
-              try {
-                await db.insert('sales', {...sale, 'synced': 1});
-              } catch (e) {
-                print('Error caching sale: $e');
-              }
-            }
-            for (final product in products) {
-              try {
-                await db.insert('products', {...product, 'synced': 1});
-              } catch (e) {
-                print('Error caching product: $e');
-              }
-            }
           } catch (e) {
             print('Supabase fetch failed, loading from local DB: $e');
             sales = await LocalDatabaseService.instance.query('sales');
             products = await LocalDatabaseService.instance.query('products');
           }
         } else {
-          print('Loading profit data from local database (offline mode)');
           sales = await LocalDatabaseService.instance.query('sales');
           products = await LocalDatabaseService.instance.query('products');
-          print('Found ${sales.length} sales and ${products.length} products');
         }
-
+        
         // Calculate profit per sale (simplified: total - (avg cost * items))
         final Map<String, double> costMap = {};
         for (final p in products) {
           costMap[p['id']] = (p['cost_price'] as num?)?.toDouble() ?? 0;
         }
-
+        
         _rows = sales.map((sale) {
           final total = (sale['total'] as num?)?.toDouble() ?? 0;
           // Approximate cost (in real scenario, items would be stored in JSONB)
@@ -143,29 +101,22 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
             'created_at': sale['created_at'],
           };
         }).toList();
-
+        
         if (_range != null) {
-          _rows = _rows.where((r) {
-            final date = DateTime.tryParse(r['created_at'] ?? '');
-            if (date == null) return false;
-            return !date.isBefore(_range!.start) && !date.isAfter(_range!.end);
-          }).toList();
+          _rows = _rows
+              .where((r) {
+                final date = DateTime.tryParse(r['created_at'] ?? '');
+                if (date == null) return false;
+                return !date.isBefore(_range!.start) && !date.isAfter(_range!.end);
+              })
+              .toList();
         }
       } else if (widget.type == 'Stock') {
         if (!_offline) {
           try {
             final client = SupabaseService.instance.client;
-            final res = await client
-                .from('products')
-                .select('name, quantity, category')
-                .order('quantity', ascending: true);
+            final res = await client.from('products').select('name, quantity, category').order('quantity', ascending: true);
             _rows = List<Map<String, dynamic>>.from(res);
-
-            // Cache to local database
-            final db = LocalDatabaseService.instance;
-            for (final product in _rows) {
-              await db.insert('products', {...product, 'synced': 1});
-            }
           } catch (e) {
             print('Supabase fetch failed, loading from local DB: $e');
             _rows = await LocalDatabaseService.instance.query('products');
@@ -177,17 +128,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
         if (!_offline) {
           try {
             final client = SupabaseService.instance.client;
-            final res = await client
-                .from('wastage_logs')
-                .select('reason, quantity, created_at')
-                .order('created_at', ascending: false);
+            final res = await client.from('wastage_logs').select('reason, quantity, created_at').order('created_at', ascending: false);
             _rows = List<Map<String, dynamic>>.from(res);
-
-            // Cache to local database
-            final db = LocalDatabaseService.instance;
-            for (final log in _rows) {
-              await db.insert('wastage_logs', {...log, 'synced': 1});
-            }
           } catch (e) {
             print('No wastage logs available');
             _rows = [];
@@ -199,13 +141,15 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
             _rows = [];
           }
         }
-
+        
         if (_range != null) {
-          _rows = _rows.where((r) {
-            final date = DateTime.tryParse(r['created_at'] ?? '');
-            if (date == null) return false;
-            return !date.isBefore(_range!.start) && !date.isAfter(_range!.end);
-          }).toList();
+          _rows = _rows
+              .where((r) {
+                final date = DateTime.tryParse(r['created_at'] ?? '');
+                if (date == null) return false;
+                return !date.isBefore(_range!.start) && !date.isAfter(_range!.end);
+              })
+              .toList();
         }
       }
     } catch (e) {
@@ -226,14 +170,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
       appBar: AppBar(
         title: Text(widget.type),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            onPressed: () => _export('pdf'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.grid_on),
-            onPressed: () => _export('csv'),
-          ),
+          IconButton(icon: const Icon(Icons.picture_as_pdf), onPressed: () => _export('pdf')),
+          IconButton(icon: const Icon(Icons.grid_on), onPressed: () => _export('csv')),
         ],
       ),
       body: Column(
@@ -245,18 +183,10 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.date_range),
-                    label: Text(
-                      _range == null
-                          ? 'Select Date Range'
-                          : '${_range!.start.toString().split(' ').first} - ${_range!.end.toString().split(' ').first}',
-                    ),
+                    label: Text(_range == null ? 'Select Date Range' : '${_range!.start.toString().split(' ').first} - ${_range!.end.toString().split(' ').first}'),
                     onPressed: () async {
                       final now = DateTime.now();
-                      final picked = await showDateRangePicker(
-                        context: context,
-                        firstDate: DateTime(2022),
-                        lastDate: DateTime(now.year + 1),
-                      );
+                      final picked = await showDateRangePicker(context: context, firstDate: DateTime(2022), lastDate: DateTime(now.year + 1));
                       if (picked != null) {
                         setState(() => _range = picked);
                         _load();
@@ -272,26 +202,19 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _rows.isEmpty
-                ? const Center(child: Text('No data available'))
-                : ListView.separated(
-                    itemCount: _rows.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final row = _rows[index];
-                      return ListTile(
-                        title: Text(
-                          _getDisplayTitle(row),
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        subtitle: Text(
-                          _getDisplaySubtitle(row),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: _getDisplayTrailing(row),
-                      );
-                    },
-                  ),
+                    ? const Center(child: Text('No data available'))
+                    : ListView.separated(
+                        itemCount: _rows.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final row = _rows[index];
+                          return ListTile(
+                            title: Text(_getDisplayTitle(row), style: const TextStyle(fontWeight: FontWeight.w700)),
+                            subtitle: Text(_getDisplaySubtitle(row), maxLines: 2, overflow: TextOverflow.ellipsis),
+                            trailing: _getDisplayTrailing(row),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
@@ -342,9 +265,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
 
   void _export(String type) {
     if (_rows.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No data to export')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No data to export')));
       return;
     }
     if (type == 'csv') {
@@ -356,15 +277,10 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
 
   Future<void> _exportCsv() async {
     final headers = _rows.first.keys.toList();
-    final data = [
-      headers,
-      ..._rows.map((r) => headers.map((h) => r[h] ?? '').toList()),
-    ];
+    final data = [headers, ..._rows.map((r) => headers.map((h) => r[h] ?? '').toList())];
     final csvData = const ListToCsvConverter().convert(data);
     final dir = await getTemporaryDirectory();
-    final file = File(
-      '${dir.path}/${widget.type.replaceAll(' ', '_').toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}.csv',
-    );
+    final file = File('${dir.path}/${widget.type.replaceAll(' ', '_').toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}.csv');
     await file.writeAsString(csvData);
     await Share.shareXFiles([XFile(file.path)], subject: '${widget.type} CSV');
   }
@@ -373,69 +289,47 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
     try {
       final doc = pw.Document();
       final headers = _rows.isNotEmpty ? _rows.first.keys.toList() : [];
-
+      
       if (headers.isEmpty) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('No data to export')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No data to export')));
         return;
       }
-
+      
       doc.addPage(
         pw.MultiPage(
           build: (context) => [
-            pw.Text(
-              widget.type,
-              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
-            ),
+            pw.Text(widget.type, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 12),
-            pw.Text(
-              'Generated: ${DateTime.now().toString().split('.').first}',
-              style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
-            ),
+            pw.Text('Generated: ${DateTime.now().toString().split('.').first}', style: pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
             pw.SizedBox(height: 12),
             if (_rows.isNotEmpty)
               pw.Table.fromTextArray(
                 headers: headers,
                 data: _rows
-                    .map(
-                      (r) => headers.map((h) {
-                        final val = r[h];
-                        if (val is double) return val.toStringAsFixed(2);
-                        return val?.toString() ?? '';
-                      }).toList(),
-                    )
+                    .map((r) => headers.map((h) {
+                          final val = r[h];
+                          if (val is double) return val.toStringAsFixed(2);
+                          return val?.toString() ?? '';
+                        }).toList())
                     .toList(),
                 border: pw.TableBorder.all(),
-                headerStyle: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 10,
-                ),
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
                 cellStyle: const pw.TextStyle(fontSize: 9),
               )
             else
-              pw.Text(
-                'No data available',
-                style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
-              ),
+              pw.Text('No data available', style: pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
           ],
         ),
       );
-
+      
       final bytes = await doc.save();
       final dir = await getTemporaryDirectory();
-      final file = File(
-        '${dir.path}/${widget.type.replaceAll(' ', '_').toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}.pdf',
-      );
+      final file = File('${dir.path}/${widget.type.replaceAll(' ', '_').toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}.pdf');
       await file.writeAsBytes(bytes, flush: true);
-      await Share.shareXFiles([
-        XFile(file.path),
-      ], subject: '${widget.type} PDF');
+      await Share.shareXFiles([XFile(file.path)], subject: '${widget.type} PDF');
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('PDF export failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('PDF export failed: $e')));
       }
     }
   }

@@ -57,14 +57,22 @@ class SettingsScreen extends StatelessWidget {
               title: 'Currency Selection',
               subtitle: 'Choose default currency',
               icon: Icons.currency_exchange,
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CurrencySelectionScreen())),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const CurrencySelectionScreen(),
+                ),
+              ),
             ),
             _tile(
               context,
               title: 'Tax Configuration',
               subtitle: 'Manage tax rules',
               icon: Icons.percent,
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaxConfigurationScreen())),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const TaxConfigurationScreen(),
+                ),
+              ),
               enabled: currentRole != 'cashier',
             ),
             _sectionTitle('Data & Sync'),
@@ -73,14 +81,20 @@ class SettingsScreen extends StatelessWidget {
               title: 'Sync Preferences',
               subtitle: 'Auto sync and status',
               icon: Icons.sync,
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SyncPreferencesScreen())),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const SyncPreferencesScreen(),
+                ),
+              ),
             ),
             _tile(
               context,
               title: 'Backup & Restore',
               subtitle: 'Cloud backups overview',
               icon: Icons.backup_outlined,
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BackupSettingsScreen())),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BackupSettingsScreen()),
+              ),
               enabled: currentRole != 'cashier',
             ),
             _sectionTitle('Appearance'),
@@ -89,7 +103,9 @@ class SettingsScreen extends StatelessWidget {
               title: 'Theme',
               subtitle: 'Light / Dark / Auto',
               icon: Icons.dark_mode_outlined,
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AppearanceScreen())),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AppearanceScreen()),
+              ),
             ),
             _sectionTitle('Info'),
             _tile(
@@ -97,7 +113,9 @@ class SettingsScreen extends StatelessWidget {
               title: 'About Us',
               subtitle: 'Terms, privacy, version',
               icon: Icons.info_outline,
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AboutScreen())),
+              onTap: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const AboutScreen())),
             ),
             _logoutTile(context),
           ],
@@ -107,17 +125,43 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _sectionTitle(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-        child: Text(text.toUpperCase(), style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 13)),
-      );
+    padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+    child: Text(
+      text.toUpperCase(),
+      style: const TextStyle(
+        color: AppColors.muted,
+        fontWeight: FontWeight.w700,
+        fontSize: 13,
+      ),
+    ),
+  );
 
-  Widget _tile(BuildContext context, {required String title, required String subtitle, required IconData icon, VoidCallback? onTap, bool enabled = true}) {
+  Widget _tile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    VoidCallback? onTap,
+    bool enabled = true,
+  }) {
     final muted = !enabled;
     return ListTile(
       enabled: enabled,
-      leading: CircleAvatar(backgroundColor: Colors.orange.shade50, child: Icon(icon, color: muted ? Colors.grey : AppColors.primary)),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: muted ? Colors.grey : null)),
-      subtitle: Text(subtitle, style: TextStyle(color: muted ? Colors.grey : null)),
+      leading: CircleAvatar(
+        backgroundColor: Colors.orange.shade50,
+        child: Icon(icon, color: muted ? Colors.grey : AppColors.primary),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: muted ? Colors.grey : null,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(color: muted ? Colors.grey : null),
+      ),
       trailing: const Icon(Icons.chevron_right),
       onTap: enabled ? onTap : null,
     );
@@ -125,17 +169,28 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _logoutTile(BuildContext context) {
     return ListTile(
-      title: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+      title: const Text(
+        'Logout',
+        style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700),
+      ),
       leading: const Icon(Icons.logout, color: Colors.red),
       onTap: () async {
         final confirm = await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Log Out?'),
-            content: const Text('Are you sure you want to end your shift? Unsaved cart items will be cleared.'),
+            content: const Text(
+              'Are you sure you want to end your shift? Unsaved cart items will be cleared.',
+            ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-              ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Yes, Log Out')),
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Yes, Log Out'),
+              ),
             ],
           ),
         );

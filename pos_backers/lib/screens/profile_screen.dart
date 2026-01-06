@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 import '../core/services/supabase_service.dart';
 import '../core/theme/app_theme.dart';
 
@@ -53,6 +54,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
     final path = result?.files.single.path;
     if (path == null) return;
+    // Copy to app documents so it persists across sessions/logouts
+    try {
+      final docs = await getApplicationDocumentsDirectory();
+      final target = File('${docs.path}/profile_avatar.png');
+      await File(path).copy(target.path);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('profile_avatar_path', target.path);
+      if (!mounted) return;
+      setState(() => _avatarPath = target.path);
+      return;
+    } catch (_) {
+      // fallback to original path if copy fails
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('profile_avatar_path', path);
     if (!mounted) return;

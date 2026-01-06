@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/services/connectivity_service.dart';
 import '../core/services/local_database_service.dart';
 import '../core/services/supabase_service.dart';
+import '../core/services/settings_service.dart';
 import '../core/theme/app_theme.dart';
 import '../widgets/offline_banner.dart';
 import 'add_edit_product_screen.dart';
@@ -16,6 +17,7 @@ class ProductsScreen extends StatefulWidget {
 class _ProductsScreenState extends State<ProductsScreen> {
   String _query = '';
   bool _offline = false;
+  String _currencySymbol = r'$';
   late final _connSub = ConnectivityService.instance.connectivityStream.listen((online) {
     setState(() => _offline = !online);
   });
@@ -24,6 +26,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
   void initState() {
     super.initState();
     _checkConnectivity();
+    _loadCurrency();
+  }
+
+  Future<void> _loadCurrency() async {
+    final symbol = await SettingsService.instance.currencySymbol();
+    if (mounted) setState(() => _currencySymbol = symbol);
   }
 
   Future<void> _checkConnectivity() async {
@@ -71,13 +79,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
-  Future<void> _delete(int id) async {
+  Future<void> _delete(String id) async {
     try {
       if (!_offline) {
         await SupabaseService.instance.client.from('products').delete().eq('id', id);
       }
       // Also delete from local database
-      await LocalDatabaseService.instance.delete('products', id.toString());
+      await LocalDatabaseService.instance.delete('products', id);
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) {
@@ -110,70 +118,94 @@ class _ProductsScreenState extends State<ProductsScreen> {
               ),
             ),
             Expanded(
-              child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: _loadProducts(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  
-                  final items = snapshot.data ?? [];
-                  final filtered = items.where((p) => p['name'].toString().toLowerCase().contains(_query)).toList();
-                  
-                  if (filtered.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+              child: RefreshIndicator(
+                onRefresh: () async => setState(() {}),
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _loadProducts(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    
+                    final items = snapshot.data ?? [];
+                    final filtered = items.where((p) => p['name'].toString().toLowerCase().contains(_query)).toList();
+                    
+                    if (filtered.isEmpty) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         children: [
-                          Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade400),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No products found.',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _offline ? 'Add products online first or tap + to add offline' : 'Tap + to add your first product',
-                            style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                          const SizedBox(height: 80),
+                          Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade400),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No products found.',
+                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _offline ? 'Add products online first or tap + to add offline' : 'Tap + to add your first product',
+                                  style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
-                      ),
-                    );
-                  }
-                  
-                  return ListView.separated(
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 6),
-                    itemBuilder: (context, index) {
-                      final p = filtered[index];
-                      return Dismissible(
-                        key: ValueKey(p['id']),
-                        background: Container(color: Colors.redAccent, alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20), child: const Icon(Icons.delete, color: Colors.white)),
-                        direction: DismissDirection.endToStart,
-                        onDismissed: (_) => _delete(p['id'] is int ? p['id'] as int : int.tryParse(p['id'].toString()) ?? 0),
-                        child: ListTile(
-                          tileColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          leading: CircleAvatar(backgroundColor: Colors.orange.shade50, child: const Icon(Icons.bakery_dining, color: AppColors.primary)),
-                          title: Text(p['name'] ?? ''),
-                          subtitle: Text(p['category'] ?? ''),
-                          trailing: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('Qty: ${p['quantity'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.w700)),
-                              Text('\$${p['price'] ?? 0}', style: const TextStyle(color: AppColors.muted)),
-                            ],
-                          ),
-                          onTap: () async {
-                            final updated = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => AddEditProductScreen(product: p)));
-                            if (updated == true && mounted) setState(() {});
-                          },
-                        ),
                       );
-                    },
-                  );
-                },
+                    }
+                    
+                    return ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      itemBuilder: (context, index) {
+                        final p = filtered[index];
+                        return Dismissible(
+                          key: ValueKey(p['id'].toString()),
+                          background: Container(color: Colors.redAccent, alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20), child: const Icon(Icons.delete, color: Colors.white)),
+                          direction: DismissDirection.endToStart,
+                          confirmDismiss: (_) async {
+                            return await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Delete product?'),
+                                    content: Text('This will remove "${p['name'] ?? 'product'}".'),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                                      ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('Delete')),
+                                    ],
+                                  ),
+                                ) ??
+                                false;
+                          },
+                          onDismissed: (_) => _delete(p['id'].toString()),
+                          child: ListTile(
+                            tileColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            leading: CircleAvatar(backgroundColor: Colors.orange.shade50, child: const Icon(Icons.bakery_dining, color: AppColors.primary)),
+                            title: Text(p['name'] ?? ''),
+                            subtitle: Text(p['category'] ?? ''),
+                            trailing: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('Qty: ${p['quantity'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                                Text('$_currencySymbol${p['price'] ?? 0}', style: const TextStyle(color: AppColors.muted)),
+                              ],
+                            ),
+                            onTap: () async {
+                              final updated = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => AddEditProductScreen(product: p)));
+                              if (updated == true && mounted) setState(() {});
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ],

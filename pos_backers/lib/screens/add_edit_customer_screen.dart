@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../core/services/connectivity_service.dart';
 import '../core/services/local_database_service.dart';
+import '../core/services/offline_queue_service.dart';
 import '../core/services/supabase_service.dart';
 import '../core/theme/app_theme.dart';
 
@@ -40,16 +41,18 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
+    final id = widget.customer?['id'] ?? const Uuid().v4();
     final data = {
+      'id': id.toString(),
       'name': _name.text.trim(),
       'phone': _phone.text.trim(),
       'email': _email.text.trim(),
       'address': _address.text.trim(),
       'loyalty_points': int.tryParse(_points.text) ?? 0,
+      'created_at': widget.customer?['created_at'] ?? DateTime.now().toIso8601String(),
     };
     
     try {
-      final id = widget.customer?['id'] ?? const Uuid().v4();
       bool savedToSupabase = false;
       
       // Try to save to Supabase when online
@@ -59,20 +62,24 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
           if (widget.customer == null) {
             await client.from('customers').insert(data);
           } else {
-            await client.from('customers').update(data).eq('id', widget.customer!['id']);
+            final updateData = Map<String, dynamic>.from(data)..remove('id')..remove('created_at');
+            await client.from('customers').update(updateData).eq('id', id);
           }
           savedToSupabase = true;
         } catch (e) {
+          // Supabase failed, queue for later sync
           print('Supabase save failed: $e');
+          await OfflineQueueService.instance.enqueueCustomer(data);
         }
+      } else {
+        // Offline - queue the customer for sync
+        await OfflineQueueService.instance.enqueueCustomer(data);
       }
       
       // Always save to local database
       final localData = {
-        'id': id.toString(),
         ...data,
         'synced': savedToSupabase ? 1 : 0,
-        'created_at': widget.customer?['created_at'] ?? DateTime.now().toIso8601String(),
       };
       
       if (widget.customer == null) {

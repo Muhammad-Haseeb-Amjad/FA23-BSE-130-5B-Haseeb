@@ -15,11 +15,33 @@ class LocalDatabaseService {
   Future<Database> _initDb() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'breadbox_pos.db');
+
     return openDatabase(
       path,
-      version: 1,
+      version: 3,
       onCreate: _createTables,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add image_path column if it doesn't exist
+      try {
+        await db.execute('ALTER TABLE products ADD COLUMN image_path TEXT');
+      } catch (e) {
+        print('Column might already exist: $e');
+      }
+    }
+
+    // Add address to customers table if upgrading from older schema
+    if (oldVersion < 3) {
+      try {
+        await db.execute('ALTER TABLE customers ADD COLUMN address TEXT');
+      } catch (e) {
+        print('Address column might already exist: $e');
+      }
+    }
   }
 
   Future<void> _createTables(Database db, int version) async {
@@ -36,6 +58,7 @@ class LocalDatabaseService {
         expiry_date TEXT,
         low_stock_alert INTEGER DEFAULT 1,
         expiry_alert INTEGER DEFAULT 1,
+        image_path TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         synced INTEGER DEFAULT 0
       )
@@ -47,6 +70,7 @@ class LocalDatabaseService {
         name TEXT NOT NULL,
         email TEXT,
         phone TEXT,
+        address TEXT,
         loyalty_points INTEGER DEFAULT 0,
         total_spent REAL DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -99,7 +123,11 @@ class LocalDatabaseService {
     await db.insert(table, data, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<void> update(String table, Map<String, dynamic> data, String id) async {
+  Future<void> update(
+    String table,
+    Map<String, dynamic> data,
+    String id,
+  ) async {
     final db = await database;
     await db.update(table, data, where: 'id = ?', whereArgs: [id]);
   }

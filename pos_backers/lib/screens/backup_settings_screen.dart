@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../core/services/backup_restore_service.dart';
 import '../core/services/google_drive_service.dart';
 import '../core/services/local_database_service.dart';
@@ -218,13 +219,37 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
   Future<void> _exportLocalBackup() async {
     try {
       final jsonContent = await BackupRestoreService.instance.createLocalBackup();
-      final dir = await getTemporaryDirectory();
+      Directory? dir;
+
+      // On Android, try public Downloads so the user can see the file; request permission
+      if (Platform.isAndroid) {
+        var status = await Permission.manageExternalStorage.request();
+        if (!status.isGranted) {
+          status = await Permission.storage.request();
+        }
+        if (status.isGranted) {
+          final downloads = Directory('/storage/emulated/0/Download');
+          if (await downloads.exists()) {
+            dir = downloads;
+          }
+        }
+      }
+
+      // Fallback to app documents if permission denied or Downloads missing
+      dir ??= await getApplicationDocumentsDirectory();
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+
+      final path = dir.path;
       final fileName = 'pos_backup_${DateTime.now().millisecondsSinceEpoch}.json';
-      final file = File('${dir.path}/$fileName');
+      final file = File('$path/$fileName');
       await file.writeAsString(jsonContent);
 
       if (mounted) {
-        await Share.shareXFiles([XFile(file.path)], subject: 'POS Backup');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Exported to ${file.path}')),
+        );
       }
     } catch (e) {
       if (mounted) {

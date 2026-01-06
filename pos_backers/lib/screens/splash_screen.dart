@@ -83,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     children: const [
                       Icon(Icons.bakery_dining, size: 56, color: AppColors.primary),
                       SizedBox(height: 10),
-                      Text('Bread Box', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                      Text('BreadBox', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),

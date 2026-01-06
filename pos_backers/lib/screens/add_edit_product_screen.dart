@@ -1,7 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:intl/intl.dart';
+import 'package:barcode_scan2/barcode_scan2.dart';
 import 'package:uuid/uuid.dart';
 import '../core/services/connectivity_service.dart';
 import '../core/services/local_database_service.dart';
+import '../core/services/offline_queue_service.dart';
 import '../core/services/supabase_service.dart';
 import '../core/theme/app_theme.dart';
 
@@ -25,6 +31,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   late TextEditingController _expiryDate;
   late bool _lowStockAlert;
   late bool _expiryAlert;
+  String? _imagePath;
   bool _saving = false;
   bool _online = true;
   late final _connSub = ConnectivityService.instance.connectivityStream.listen((online) {
@@ -44,6 +51,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     _expiryDate = TextEditingController(text: widget.product?['expiry_date'] ?? '');
     _lowStockAlert = widget.product?['low_stock_alert'] ?? true;
     _expiryAlert = widget.product?['expiry_alert'] ?? true;
+    _imagePath = widget.product?['image_path'];
   }
 
   @override
@@ -63,7 +71,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
+    final id = (widget.product?['id'] ?? const Uuid().v4()).toString();
     final data = {
+      'id': id,
       'name': _name.text.trim(),
       'category': _category.text.trim(),
       'barcode': _barcode.text.trim().isEmpty ? null : _barcode.text.trim(),
@@ -74,10 +84,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       'expiry_date': _expiryDate.text.isEmpty ? null : _expiryDate.text,
       'low_stock_alert': _lowStockAlert,
       'expiry_alert': _expiryAlert,
+      'created_at': widget.product?['created_at'] ?? DateTime.now().toIso8601String(),
     };
     
     try {
-      final id = widget.product?['id'] ?? const Uuid().v4();
       bool savedToSupabase = false;
       
       // Try to save to Supabase when online
@@ -87,27 +97,33 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           if (widget.product == null) {
             await client.from('products').insert(data);
           } else {
-            await client.from('products').update(data).eq('id', widget.product!['id']);
+            final updateData = Map<String, dynamic>.from(data)..remove('id')..remove('created_at');
+            await client.from('products').update(updateData).eq('id', id);
           }
           savedToSupabase = true;
+          print('Product saved to Supabase: $id');
         } catch (e) {
-          // Supabase failed, continue with local save
-          print('Supabase save failed: $e');
+          // Supabase failed, queue for later sync
+          print('Supabase save failed, queuing product: $e');
+          await OfflineQueueService.instance.enqueueProduct(data);
         }
+      } else {
+        // Offline - queue the product for sync
+        print('Offline mode - queuing product: $id');
+        await OfflineQueueService.instance.enqueueProduct(data);
       }
       
-      // Always save to local database
+      // Always save to local database with image_path
       final localData = {
-        'id': id.toString(),
         ...data,
         'synced': savedToSupabase ? 1 : 0,
-        'created_at': widget.product?['created_at'] ?? DateTime.now().toIso8601String(),
+        if (_imagePath != null) 'image_path': _imagePath,
       };
       
       if (widget.product == null) {
         await LocalDatabaseService.instance.insertProduct(localData);
       } else {
-        await LocalDatabaseService.instance.update('products', localData, id.toString());
+        await LocalDatabaseService.instance.update('products', localData, id);
       }
       
       if (!mounted) return;
@@ -132,8 +148,74 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     final initial = DateTime.now();
     final picked = await showDatePicker(context: context, initialDate: initial, firstDate: DateTime(2020), lastDate: DateTime(2100));
     if (picked != null) {
-      controller.text = picked.toIso8601String();
+      controller.text = DateFormat('yyyy-MM-dd').format(picked);
       setState(() {});
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.single.path != null) {
+      setState(() => _imagePath = result.files.single.path);
+    }
+  }
+
+  Future<void> _scanBarcode() async {
+    try {
+      final result = await BarcodeScanner.scan(options: const ScanOptions(useCamera: -1));
+      final code = result.rawContent;
+      if (code.isNotEmpty) {
+        setState(() => _barcode.text = code);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Scan failed: $e')));
+    }
+  }
+
+  Future<void> _confirmAndDelete() async {
+    final product = widget.product;
+    if (product == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete product?'),
+        content: Text('This will remove "${product['name'] ?? 'product'}" from your list.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('Delete')),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _deleteProduct(product['id'].toString());
+    }
+  }
+
+  Future<void> _deleteProduct(String id) async {
+    setState(() => _saving = true);
+    try {
+      if (_online) {
+        try {
+          await SupabaseService.instance.client.from('products').delete().eq('id', id);
+        } catch (e) {
+          // If Supabase delete fails, still remove locally
+          print('Supabase delete failed: $e');
+        }
+      }
+
+      await LocalDatabaseService.instance.delete('products', id);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Product deleted')));
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -142,6 +224,14 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.product == null ? 'Add Product' : 'Edit Product'),
+        actions: [
+          if (widget.product != null)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Delete product',
+              onPressed: _saving ? null : _confirmAndDelete,
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -149,6 +239,50 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           key: _formKey,
           child: Column(
             children: [
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey.shade300),
+                          image: _imagePath != null ? DecorationImage(image: FileImage(File(_imagePath!)), fit: BoxFit.cover) : null,
+                        ),
+                        child: _imagePath == null ? const Icon(Icons.add_a_photo, color: AppColors.primary) : null,
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Add product photo', style: TextStyle(fontWeight: FontWeight.w700)),
+                            SizedBox(height: 4),
+                            Text('Tap to choose image', style: TextStyle(color: AppColors.muted)),
+                          ],
+                        ),
+                      ),
+                      if (_imagePath != null)
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => setState(() => _imagePath = null),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _name,
                 decoration: const InputDecoration(labelText: 'Product Name'),
@@ -162,7 +296,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _barcode,
-                decoration: const InputDecoration(labelText: 'Barcode (optional)'),
+                decoration: InputDecoration(
+                  labelText: 'Barcode (optional)',
+                  suffixIcon: IconButton(icon: const Icon(Icons.qr_code_scanner), onPressed: _scanBarcode),
+                ),
               ),
               const SizedBox(height: 12),
               Row(

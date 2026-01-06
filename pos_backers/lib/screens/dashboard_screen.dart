@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/services/connectivity_service.dart';
 import '../core/services/local_database_service.dart';
+import '../core/services/settings_service.dart';
 import '../core/services/supabase_service.dart';
 import '../core/theme/app_theme.dart';
 import '../widgets/offline_banner.dart';
@@ -38,6 +39,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _offline = false;
   String? _avatarPath;
+  String _currencySymbol = r'$';
   late final _connSub = ConnectivityService.instance.connectivityStream.listen((online) {
     setState(() => _offline = !online);
   });
@@ -46,6 +48,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadAvatar();
+    _loadCurrency();
   }
 
   @override
@@ -59,6 +62,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final saved = prefs.getString('profile_avatar_path');
     if (!mounted) return;
     setState(() => _avatarPath = saved);
+  }
+
+  Future<void> _loadCurrency() async {
+    final symbol = await SettingsService.instance.currencySymbol();
+    if (mounted) setState(() => _currencySymbol = symbol);
   }
 
   void _openProfile() {
@@ -248,7 +256,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const Text('Total Sales', style: TextStyle(color: Colors.white70, fontSize: 14)),
                           const SizedBox(height: 6),
                           Text(
-                            data == null ? '—' : NumberFormat.simpleCurrency().format(data.todaySales),
+                            data == null ? '—' : '$_currencySymbol${NumberFormat('#,##0.00').format(data.todaySales)}',
                             style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 8),
@@ -330,7 +338,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     leading: const CircleAvatar(backgroundColor: Colors.white, child: Icon(Icons.bakery_dining, color: AppColors.primary)),
                                     title: Text(item['name'] ?? ''),
                                     subtitle: Text('Sold: ${item['sold']}'),
-                                    trailing: Text(NumberFormat.simpleCurrency().format((item['price'] ?? 0) * (item['sold'] ?? 0))),
+                                    trailing: Text('$_currencySymbol${NumberFormat('#,##0.00').format((item['price'] ?? 0) * (item['sold'] ?? 0))}'),
                                   )),
                           ],
                         ),

@@ -14,8 +14,10 @@ class GoogleDriveService {
   GoogleSignInAccount? _currentUser;
 
   Future<void> initialize() async {
+    // appDataFolder access needs driveAppdataScope; driveFileScope allows
+    // read/write of app-created files. driveScope alone blocks appDataFolder.
     _googleSignIn = GoogleSignIn(
-      scopes: [ga.DriveApi.driveScope],
+      scopes: [ga.DriveApi.driveAppdataScope, ga.DriveApi.driveFileScope],
     );
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
       _currentUser = account;
@@ -33,29 +35,48 @@ class GoogleDriveService {
 
   Future<GoogleSignInAccount?> signIn() async {
     try {
+      // already signed in
+      if (_currentUser != null) return _currentUser;
+
+      // try silent first
+      final silent = await _googleSignIn.signInSilently();
+      if (silent != null) {
+        await _initDriveApi(silent);
+        _currentUser = silent;
+        return silent;
+      }
+
+      // interactive sign-in
       final account = await _googleSignIn.signIn();
       if (account != null) {
         await _initDriveApi(account);
+        _currentUser = account;
       }
       return account;
     } catch (e) {
       print('Google Sign-In error: $e');
-      return null;
+      rethrow;
     }
   }
 
   Future<void> signOut() async {
     await _googleSignIn.signOut();
+    _currentUser = null;
     _driveApi = null;
   }
 
   Future<String?> backupToGoogleDrive() async {
-    if (_driveApi == null) {
-      final account = await signIn();
-      if (account == null) return null;
-    }
-
     try {
+      if (_driveApi == null || _currentUser == null) {
+        final account = await signIn();
+        if (account == null) {
+          throw Exception('Failed to sign in to Google');
+        }
+        if (_driveApi == null) {
+          throw Exception('Drive API not initialized after sign-in');
+        }
+      }
+
       final db = LocalDatabaseService.instance;
 
       // Backup all tables
@@ -69,7 +90,8 @@ class GoogleDriveService {
       };
 
       final jsonContent = jsonEncode(backup);
-      final fileName = 'pos_backup_${DateTime.now().millisecondsSinceEpoch}.json';
+      final fileName =
+          'pos_backup_${DateTime.now().millisecondsSinceEpoch}.json';
 
       // Upload to Drive
       final driveFile = ga.File();
@@ -78,7 +100,10 @@ class GoogleDriveService {
 
       final result = await _driveApi!.files.create(
         driveFile,
-        uploadMedia: ga.Media(Stream.value(utf8.encode(jsonContent)), jsonContent.length),
+        uploadMedia: ga.Media(
+          Stream.value(utf8.encode(jsonContent)),
+          jsonContent.length,
+        ),
       );
 
       return result.id;
@@ -96,10 +121,7 @@ class GoogleDriveService {
 
     try {
       const q = "name contains 'pos_backup'";
-      final result = await _driveApi!.files.list(
-        q: q,
-        spaces: 'appDataFolder',
-      );
+      final result = await _driveApi!.files.list(q: q, spaces: 'appDataFolder');
       return result.files ?? [];
     } catch (e) {
       print('Failed to list backups: $e');
@@ -114,10 +136,12 @@ class GoogleDriveService {
     }
 
     try {
-      final media = await _driveApi!.files.get(
-        fileId,
-        downloadOptions: ga.DownloadOptions.fullMedia,
-      ) as ga.Media;
+      final media =
+          await _driveApi!.files.get(
+                fileId,
+                downloadOptions: ga.DownloadOptions.fullMedia,
+              )
+              as ga.Media;
 
       final bytes = await media.stream.toList();
       final content = utf8.decode(bytes.expand((b) => b).toList());

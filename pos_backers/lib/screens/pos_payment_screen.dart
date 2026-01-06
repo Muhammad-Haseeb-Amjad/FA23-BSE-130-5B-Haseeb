@@ -60,9 +60,16 @@ class _PosPaymentScreenState extends State<PosPaymentScreen> {
         try {
           await SupabaseService.instance.client.from('sales').insert(sale);
           savedToSupabase = true;
+          print('Sale saved to Supabase: $id');
         } catch (e) {
-          print('Supabase save failed: $e');
+          // Supabase failed, queue for later sync
+          print('Supabase save failed, queuing sale: $e');
+          await OfflineQueueService.instance.enqueueSale(sale);
         }
+      } else {
+        // Offline - queue the sale for sync
+        print('Offline mode - queuing sale: $id');
+        await OfflineQueueService.instance.enqueueSale(sale);
       }
       
       // Always save to local database
@@ -70,8 +77,8 @@ class _PosPaymentScreenState extends State<PosPaymentScreen> {
         ...sale,
         'synced': savedToSupabase ? 1 : 0,
       });
-      
-      await _shareReceipt(sale);
+
+      await _updateStockQuantities(canSyncOnline: !_offline);
       if (!mounted) return;
       
       ScaffoldMessenger.of(context).showSnackBar(
@@ -83,6 +90,35 @@ class _PosPaymentScreenState extends State<PosPaymentScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not save sale: $e')));
     } finally {
       if (mounted) setState(() => _processing = false);
+    }
+  }
+
+  Future<void> _updateStockQuantities({required bool canSyncOnline}) async {
+    for (final item in widget.cart) {
+      final id = item['id'].toString();
+      final currentQty = (item['quantity'] ?? 0) as num;
+      final soldQty = (item['qty'] ?? 0) as num;
+      final newQty = (currentQty - soldQty).clamp(0, double.infinity).toInt();
+
+      try {
+        // Update Supabase when allowed
+        bool synced = false;
+        if (canSyncOnline) {
+          try {
+            await SupabaseService.instance.client.from('products').update({'quantity': newQty}).eq('id', id);
+            synced = true;
+          } catch (e) {
+            print('Supabase stock update failed for $id: $e');
+          }
+        }
+
+        await LocalDatabaseService.instance.update('products', {
+          'quantity': newQty,
+          'synced': synced ? 1 : 0,
+        }, id);
+      } catch (e) {
+        print('Local stock update failed for $id: $e');
+      }
     }
   }
 
@@ -232,6 +268,27 @@ class _PosPaymentScreenState extends State<PosPaymentScreen> {
                           },
                     icon: const Icon(Icons.print),
                     label: const Text('Print / Export PDF'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _processing
+                        ? null
+                        : () {
+                            final discount = (widget.subtotal + widget.tax) - widget.total;
+                            final sale = {
+                              'subtotal': widget.subtotal,
+                              'tax': widget.tax,
+                              'discount': discount,
+                              'total': widget.total,
+                              'created_at': DateTime.now().toIso8601String(),
+                            };
+                            _shareReceipt(sale);
+                          },
+                    icon: const Icon(Icons.share_outlined),
+                    label: const Text('Share receipt'),
                   ),
                 ),
               ],

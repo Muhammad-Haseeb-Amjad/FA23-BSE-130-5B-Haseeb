@@ -93,35 +93,47 @@ class _InventoryScreenState extends State<InventoryScreen> {
             ),
           ),
           Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: _load(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
-                final items = snapshot.data ?? [];
-                final filtered = items.where((i) => i['name'].toString().toLowerCase().contains(_filter)).toList();
-                if (filtered.isEmpty) return const Center(child: Text('No inventory items.'));
-                return ListView.builder(
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final p = filtered[index];
-                    final low = (p['quantity'] ?? 0) <= 5;
-                    return ListTile(
-                      title: Text(p['name'] ?? ''),
-                      subtitle: Text(p['category'] ?? ''),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('${p['quantity'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                          if (low) const Text('Low', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
-                        ],
-                      ),
+            child: RefreshIndicator(
+              onRefresh: () async => setState(() {}),
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: _load(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+                  final items = snapshot.data ?? [];
+                  final filtered = items.where((i) => i['name'].toString().toLowerCase().contains(_filter)).toList();
+                  if (filtered.isEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        SizedBox(height: 120),
+                        Center(child: Text('No inventory items.')),
+                      ],
                     );
-                  },
-                );
-              },
+                  }
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final p = filtered[index];
+                      final low = (p['quantity'] ?? 0) <= 5;
+                      return ListTile(
+                        title: Text(p['name'] ?? ''),
+                        subtitle: Text(p['category'] ?? ''),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('${p['quantity'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                            if (low) const Text('Low', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ],

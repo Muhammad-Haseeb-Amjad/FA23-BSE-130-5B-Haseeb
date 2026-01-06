@@ -27,14 +27,19 @@ Future<void> main() async {
     // Explicitly load the .env asset for mobile builds
     await dotenv.load(fileName: '.env');
     await Hive.initFlutter();
-    await SupabaseService.instance.init();
+    
+    // Initialize connectivity first so we can detect online/offline state
     await ConnectivityService.instance.init();
+    
+    await SupabaseService.instance.init();
     await OfflineQueueService.instance.init();
     
     // Initialize offline database and sync
     await LocalDatabaseService.instance.database; // Initialize DB
     await GoogleDriveService.instance.initialize();
-    SyncService.instance.startAutoSync(); // Start auto-sync on connectivity changes
+    
+    // Start auto-sync with initial full download when coming online
+    SyncService.instance.startAutoSync();
   } catch (e) {
     print('Initialization error: $e');
   }

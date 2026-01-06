@@ -53,7 +53,7 @@ class _PosScreenState extends State<PosScreen> {
       
       if (!_offline) {
         try {
-          final res = await SupabaseService.instance.client.from('products').select('id, name, price, quantity');
+          final res = await SupabaseService.instance.client.from('products').select('id, name, price, quantity, barcode');
           products = List<Map<String, dynamic>>.from(res);
           
           // Cache to local database
@@ -238,117 +238,132 @@ class _PosScreenState extends State<PosScreen> {
         child: const Icon(Icons.qr_code_scanner, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-      body: Column(
-        children: [
-          OfflineBanner(isOffline: _offline),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Search products'),
-              onChanged: (v) => setState(() => _query = v.toLowerCase()),
-            ),
-          ),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 6,
-                  child: ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final p = filtered[index];
-                      return ListTile(
-                        title: Text(p['name'] ?? ''),
-                        subtitle: Text('$_currencySymbol${p['price']}'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.add_circle, color: AppColors.primary),
-                          onPressed: () => _addToCart(p),
-                        ),
-                      );
-                    },
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await _loadSettings();
+          await _load();
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                children: [
+                  OfflineBanner(isOffline: _offline),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: TextField(
+                      decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Search products'),
+                      onChanged: (v) => setState(() => _query = v.toLowerCase()),
+                    ),
                   ),
-                ),
-                Container(width: 1, color: Colors.grey.shade200),
-                Expanded(
-                  flex: 7,
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: _cart.length,
-                          itemBuilder: (context, index) {
-                            final item = _cart[index];
-                            return ListTile(
-                              title: Text(item['name']),
-                              subtitle: Text('Qty ${item['qty']} x $_currencySymbol${item['price']}'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => _updateQty(index, -1)),
-                                  Text(item['qty'].toString()),
-                                  IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => _updateQty(index, 1)),
-                                ],
+                  SizedBox(
+                    height: constraints.maxHeight - 140,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 6,
+                          child: ListView.builder(
+                            itemCount: filtered.length,
+                            itemBuilder: (context, index) {
+                              final p = filtered[index];
+                              return ListTile(
+                                title: Text(p['name'] ?? ''),
+                                subtitle: Text('$_currencySymbol${p['price']}'),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.add_circle, color: AppColors.primary),
+                                  onPressed: () => _addToCart(p),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        Container(width: 1, color: Colors.grey.shade200),
+                        Expanded(
+                          flex: 7,
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: ListView.builder(
+                                  itemCount: _cart.length,
+                                  itemBuilder: (context, index) {
+                                    final item = _cart[index];
+                                    return ListTile(
+                                      title: Text(item['name']),
+                                      subtitle: Text('Qty ${item['qty']} x $_currencySymbol${item['price']}'),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => _updateQty(index, -1)),
+                                          Text(item['qty'].toString()),
+                                          IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => _updateQty(index, 1)),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Subtotal'), Text('$_currencySymbol${subtotal.toStringAsFixed(2)}')]),
-                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Tax'), Text('$_currencySymbol${_taxAmount.toStringAsFixed(2)}')]),
-                            if (_discount > 0)
-                              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Discount ${_percentDiscount ? '(%)' : ''}'), Text('-$_currencySymbol${_discountAmount.toStringAsFixed(2)}')]),
-                            const Divider(),
-                            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Total', style: TextStyle(fontWeight: FontWeight.w800)), Text('$_currencySymbol${_total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w800))]),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    icon: const Icon(Icons.percent),
-                                    label: const Text('Discount'),
-                                    onPressed: _showDiscountDialog,
-                                  ),
+                              Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Subtotal'), Text('$_currencySymbol${subtotal.toStringAsFixed(2)}')]),
+                                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Tax'), Text('$_currencySymbol${_taxAmount.toStringAsFixed(2)}')]),
+                                    if (_discount > 0)
+                                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Discount ${_percentDiscount ? '(%)' : ''}'), Text('-$_currencySymbol${_discountAmount.toStringAsFixed(2)}')]),
+                                    const Divider(),
+                                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Total', style: TextStyle(fontWeight: FontWeight.w800)), Text('$_currencySymbol${_total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w800))]),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            icon: const Icon(Icons.percent),
+                                            label: const Text('Discount'),
+                                            onPressed: _showDiscountDialog,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            onPressed: _cart.isEmpty
+                                                ? null
+                                                : () async {
+                                                    final result = await Navigator.of(context).push(MaterialPageRoute(
+                                                      builder: (_) => PosPaymentScreen(
+                                                        cart: _cart,
+                                                        subtotal: subtotal,
+                                                        tax: _taxAmount,
+                                                        total: _total,
+                                                        currencySymbol: _currencySymbol,
+                                                        currencyCode: _currencyCode,
+                                                      ),
+                                                    ));
+                                                    if (result == true) {
+                                                      setState(() => _cart.clear());
+                                                    }
+                                                  },
+                                            child: const Text('Checkout'),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: _cart.isEmpty
-                                        ? null
-                                        : () async {
-                                            final result = await Navigator.of(context).push(MaterialPageRoute(
-                                              builder: (_) => PosPaymentScreen(
-                                                cart: _cart,
-                                                subtotal: subtotal,
-                                                tax: _taxAmount,
-                                                total: _total,
-                                                currencySymbol: _currencySymbol,
-                                                currencyCode: _currencyCode,
-                                              ),
-                                            ));
-                                            if (result == true) {
-                                              setState(() => _cart.clear());
-                                            }
-                                          },
-                                    child: const Text('Checkout'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

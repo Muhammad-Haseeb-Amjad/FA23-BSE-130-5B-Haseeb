@@ -10,23 +10,44 @@ class OfflineQueueService {
 
   static const _boxName = 'offline_queue';
   static const _keySales = 'pending_sales';
+  static const _keyProducts = 'pending_products';
+  static const _keyCustomers = 'pending_customers';
   Box? _box;
 
   Future<void> init() async {
     _box ??= await Hive.openBox(_boxName);
   }
 
+  // ===== SALES =====
   Future<void> enqueueSale(Map<String, dynamic> sale) async {
     await init();
-    final list = List<Map<String, dynamic>>.from(_box?.get(_keySales, defaultValue: [])?.cast<Map>() ?? []);
-    list.add(sale);
-    await _box?.put(_keySales, list);
+    try {
+      final data = _box?.get(_keySales, defaultValue: <dynamic>[]);
+      final list = data is List ? List<Map<String, dynamic>>.from(
+        (data).map((item) => item is Map ? Map<String, dynamic>.from(item as Map) : {})
+      ) : <Map<String, dynamic>>[];
+      list.add(sale);
+      await _box?.put(_keySales, list);
+      print('Sale queued for sync (total: ${list.length})');
+    } catch (e) {
+      print('Error enqueueing sale: $e');
+    }
   }
 
   Future<List<Map<String, dynamic>>> getPendingSales() async {
     await init();
-    final list = List<Map<String, dynamic>>.from(_box?.get(_keySales, defaultValue: [])?.cast<Map>() ?? []);
-    return list;
+    try {
+      final data = _box?.get(_keySales, defaultValue: <dynamic>[]);
+      if (data is List) {
+        return List<Map<String, dynamic>>.from(
+          data.map((item) => item is Map ? Map<String, dynamic>.from(item as Map) : {})
+        );
+      }
+      return [];
+    } catch (e) {
+      print('Error getting pending sales: $e');
+      return [];
+    }
   }
 
   Future<void> clearPendingSales() async {
@@ -39,6 +60,87 @@ class OfflineQueueService {
     await _box?.put(_keySales, sales);
   }
 
+  // ===== PRODUCTS =====
+  Future<void> enqueueProduct(Map<String, dynamic> product) async {
+    await init();
+    try {
+      final data = _box?.get(_keyProducts, defaultValue: <dynamic>[]);
+      final list = data is List ? List<Map<String, dynamic>>.from(
+        (data).map((item) => item is Map ? Map<String, dynamic>.from(item as Map) : {})
+      ) : <Map<String, dynamic>>[];
+      
+      // Remove existing product with same id if editing
+      list.removeWhere((p) => p['id'] == product['id']);
+      list.add(product);
+      await _box?.put(_keyProducts, list);
+      print('Product ${product['id']} queued for sync (total: ${list.length})');
+    } catch (e) {
+      print('Error enqueueing product: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getPendingProducts() async {
+    await init();
+    try {
+      final data = _box?.get(_keyProducts, defaultValue: <dynamic>[]);
+      if (data is List) {
+        return List<Map<String, dynamic>>.from(
+          data.map((item) => item is Map ? Map<String, dynamic>.from(item as Map) : {})
+        );
+      }
+      return [];
+    } catch (e) {
+      print('Error getting pending products: $e');
+      return [];
+    }
+  }
+
+  Future<void> clearPendingProducts() async {
+    await init();
+    await _box?.put(_keyProducts, []);
+  }
+
+  // ===== CUSTOMERS =====
+  Future<void> enqueueCustomer(Map<String, dynamic> customer) async {
+    await init();
+    try {
+      final data = _box?.get(_keyCustomers, defaultValue: <dynamic>[]);
+      final list = data is List ? List<Map<String, dynamic>>.from(
+        (data).map((item) => item is Map ? Map<String, dynamic>.from(item as Map) : {})
+      ) : <Map<String, dynamic>>[];
+      
+      // Remove existing customer with same id if editing
+      list.removeWhere((c) => c['id'] == customer['id']);
+      list.add(customer);
+      await _box?.put(_keyCustomers, list);
+      print('Customer ${customer['id']} queued for sync (total: ${list.length})');
+    } catch (e) {
+      print('Error enqueueing customer: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getPendingCustomers() async {
+    await init();
+    try {
+      final data = _box?.get(_keyCustomers, defaultValue: <dynamic>[]);
+      if (data is List) {
+        return List<Map<String, dynamic>>.from(
+          data.map((item) => item is Map ? Map<String, dynamic>.from(item as Map) : {})
+        );
+      }
+      return [];
+    } catch (e) {
+      print('Error getting pending customers: $e');
+      return [];
+    }
+  }
+
+  Future<void> clearPendingCustomers() async {
+    await init();
+    await _box?.put(_keyCustomers, []);
+  }
+
+  // ===== SYNC =====
   Future<int> syncPendingSales(SupabaseClient client) async {
     await init();
     final pending = await getPendingSales();
@@ -56,6 +158,56 @@ class OfflineQueueService {
     } else {
       final remaining = pending.skip(success).toList();
       await _box?.put(_keySales, remaining);
+    }
+    return success;
+  }
+
+  Future<int> syncPendingProducts(SupabaseClient client) async {
+    await init();
+    final pending = await getPendingProducts();
+    int success = 0;
+    for (final product in pending) {
+      try {
+        final id = product['id'];
+        final data = Map<String, dynamic>.from(product)..remove('id');
+        // Try upsert in case product exists
+        await client.from('products').upsert({'id': id, ...data});
+        success++;
+        print('Synced product $id');
+      } catch (e) {
+        print('Failed to sync product: $e');
+      }
+    }
+    if (success == pending.length) {
+      await clearPendingProducts();
+    } else {
+      final remaining = pending.skip(success).toList();
+      await _box?.put(_keyProducts, remaining);
+    }
+    return success;
+  }
+
+  Future<int> syncPendingCustomers(SupabaseClient client) async {
+    await init();
+    final pending = await getPendingCustomers();
+    int success = 0;
+    for (final customer in pending) {
+      try {
+        final id = customer['id'];
+        final data = Map<String, dynamic>.from(customer)..remove('id');
+        // Try upsert in case customer exists
+        await client.from('customers').upsert({'id': id, ...data});
+        success++;
+        print('Synced customer $id');
+      } catch (e) {
+        print('Failed to sync customer: $e');
+      }
+    }
+    if (success == pending.length) {
+      await clearPendingCustomers();
+    } else {
+      final remaining = pending.skip(success).toList();
+      await _box?.put(_keyCustomers, remaining);
     }
     return success;
   }
