@@ -26,31 +26,35 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   Future<List<Map<String, dynamic>>> _load() async {
     try {
+      // Prefer local cache/restored data
+      var customers = await LocalDatabaseService.instance.query('customers');
+
       if (!_offline) {
         try {
           final res = await SupabaseService.instance.client.from('customers').select('id,name,phone,email');
-          final customers = List<Map<String, dynamic>>.from(res);
+          final remote = List<Map<String, dynamic>>.from(res);
           
-          // Cache to local database
-          for (final customer in customers) {
-            await LocalDatabaseService.instance.insertCustomer({...customer, 'synced': 1});
+          if (remote.isNotEmpty) {
+            // Cache to local database
+            for (final customer in remote) {
+              await LocalDatabaseService.instance.insertCustomer({...customer, 'synced': 1});
+            }
+            customers = remote;
           }
-          
-          return customers;
         } catch (e) {
-          print('Supabase fetch failed, loading from local DB: $e');
+          print('Supabase fetch failed, keeping local DB: $e');
         }
       }
       
-      // Load from local database
-      return await LocalDatabaseService.instance.query('customers');
+      // Load from local database (or remote when not empty)
+      return customers;
     } catch (e) {
       print('Error loading customers: $e');
       return [];
     }
   }
 
-  Future<void> _delete(int id) async {
+  Future<void> _delete(dynamic id) async {
     try {
       if (!_offline) {
         await SupabaseService.instance.client.from('customers').delete().eq('id', id);
@@ -105,7 +109,21 @@ class _CustomersScreenState extends State<CustomersScreen> {
                       key: ValueKey(c['id']),
                       direction: DismissDirection.endToStart,
                       background: Container(color: Colors.redAccent, alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20), child: const Icon(Icons.delete, color: Colors.white)),
-                      onDismissed: (_) => _delete(c['id'] as int),
+                      confirmDismiss: (_) async {
+                        return await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Delete Customer?'),
+                                content: Text('This will remove "${c['name'] ?? 'customer'}" permanently.'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                                  ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('Delete')),
+                                ],
+                              ),
+                            ) ??
+                            false;
+                      },
+                      onDismissed: (_) => _delete(c['id']),
                       child: ListTile(
                         tileColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

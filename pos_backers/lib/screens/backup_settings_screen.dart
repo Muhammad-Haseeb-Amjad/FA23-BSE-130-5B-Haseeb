@@ -195,15 +195,17 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
   Future<void> _performRestore(String fileId) async {
     setState(() => _isRestoring = true);
     try {
-      final success = await BackupRestoreService.instance.restoreFromGoogleDrive(fileId);
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✓ Restore complete. Data will sync next time you connect.'), backgroundColor: Colors.green),
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Restore failed'), backgroundColor: Colors.red),
-        );
+      final res = await BackupRestoreService.instance.restoreFromGoogleDrive(fileId);
+      if (mounted) {
+        if (res.success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('✓ Restore complete. Inserted ${res.inserted}/${res.total}. Data will sync next time you connect.'), backgroundColor: Colors.green),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Restore failed: ${res.error ?? 'Unknown error'}'), backgroundColor: Colors.red),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -271,16 +273,18 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
       if (result != null && result.files.single.path != null) {
         final file = File(result.files.single.path!);
         final jsonContent = await file.readAsString();
-        final success = await BackupRestoreService.instance.restoreFromJson(jsonContent);
+        final res = await BackupRestoreService.instance.restoreFromJson(jsonContent);
 
-        if (success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✓ Restore complete. Data will sync next time you connect.'), backgroundColor: Colors.green),
-          );
-        } else if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Restore failed'), backgroundColor: Colors.red),
-          );
+        if (mounted) {
+          if (res.success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('✓ Restore complete. Inserted ${res.inserted}/${res.total}. DB: ${res.dbCounts}'), backgroundColor: Colors.green),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Restore failed: ${res.error ?? 'file may be empty or invalid'}'), backgroundColor: Colors.red),
+            );
+          }
         }
       }
     } catch (e) {

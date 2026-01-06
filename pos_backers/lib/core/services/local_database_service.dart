@@ -18,7 +18,7 @@ class LocalDatabaseService {
 
     return openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createTables,
       onUpgrade: _onUpgrade,
     );
@@ -42,6 +42,25 @@ class LocalDatabaseService {
         print('Address column might already exist: $e');
       }
     }
+
+    // Add profile table on upgrade
+    if (oldVersion < 4) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS profile (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            address TEXT,
+            phone TEXT,
+            email TEXT,
+            image_path TEXT,
+            updated_at TEXT
+          )
+        ''');
+      } catch (e) {
+        print('Profile table creation error: $e');
+      }
+    }
   }
 
   Future<void> _createTables(Database db, int version) async {
@@ -61,6 +80,18 @@ class LocalDatabaseService {
         image_path TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         synced INTEGER DEFAULT 0
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS profile (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        address TEXT,
+        phone TEXT,
+        email TEXT,
+        image_path TEXT,
+        updated_at TEXT
       )
     ''');
 
@@ -118,9 +149,9 @@ class LocalDatabaseService {
     ''');
   }
 
-  Future<void> insert(String table, Map<String, dynamic> data) async {
+  Future<void> insert(String table, Map<String, dynamic> data, {ConflictAlgorithm conflictAlgorithm = ConflictAlgorithm.replace}) async {
     final db = await database;
-    await db.insert(table, data, conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(table, data, conflictAlgorithm: conflictAlgorithm);
   }
 
   Future<void> update(
@@ -196,5 +227,11 @@ class LocalDatabaseService {
 
   Future<void> close() async {
     await _db?.close();
+  }
+
+  /// Fully reset the singleton database handle so fresh queries reopen a clean connection.
+  Future<void> reset() async {
+    await _db?.close();
+    _db = null;
   }
 }

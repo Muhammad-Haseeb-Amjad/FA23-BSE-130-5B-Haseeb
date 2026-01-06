@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../core/services/connectivity_service.dart';
 import '../core/services/local_database_service.dart';
@@ -49,30 +51,33 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   Future<List<Map<String, dynamic>>> _loadProducts() async {
     try {
-      // If online, try to fetch from Supabase and cache locally
+      // Prefer local cache/restored data so import works while online
+      var products = await LocalDatabaseService.instance.query('products');
+
+      // If online, try to fetch from Supabase and override only when it has rows
       if (!_offline) {
         try {
           final client = SupabaseService.instance.client;
-          final res = await client.from('products').select('id, name, category, quantity, price, cost_price, barcode, batch_date, expiry_date, low_stock_alert, expiry_alert');
-          final products = List<Map<String, dynamic>>.from(res);
-          
-          // Cache to local database
-          for (final product in products) {
-            await LocalDatabaseService.instance.insertProduct({
-              ...product,
-              'synced': 1,
-            });
+          final res = await client.from('products').select('id, name, category, quantity, price, cost_price, barcode, batch_date, expiry_date, low_stock_alert, expiry_alert, image_path');
+          final remote = List<Map<String, dynamic>>.from(res);
+
+          if (remote.isNotEmpty) {
+            for (final product in remote) {
+              await LocalDatabaseService.instance.insertProduct({
+                ...product,
+                'synced': 1,
+              });
+            }
+            products = remote;
           }
-          
-          return products;
         } catch (e) {
           // If online but Supabase fails, fall back to local database
-          print('Supabase fetch failed, loading from local DB: $e');
+          print('Supabase fetch failed, keeping local DB: $e');
         }
       }
       
-      // Load from local database (offline or Supabase failed)
-      return await LocalDatabaseService.instance.query('products');
+      // Load from local database (offline, Supabase failed, or remote empty)
+      return products;
     } catch (e) {
       print('Error loading products: $e');
       return [];
@@ -163,6 +168,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       separatorBuilder: (_, __) => const SizedBox(height: 6),
                       itemBuilder: (context, index) {
                         final p = filtered[index];
+                        final imagePath = p['image_path'] as String?;
+                        
+                        // Debug: Check if file exists
+                        bool fileExists = false;
+                        if (imagePath != null && !imagePath.startsWith('http')) {
+                          fileExists = File(imagePath).existsSync();
+                          print('Image path: $imagePath, exists: $fileExists');
+                        }
+                        
                         return Dismissible(
                           key: ValueKey(p['id'].toString()),
                           background: Container(color: Colors.redAccent, alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20), child: const Icon(Icons.delete, color: Colors.white)),
@@ -185,7 +199,29 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           child: ListTile(
                             tileColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            leading: CircleAvatar(backgroundColor: Colors.orange.shade50, child: const Icon(Icons.bakery_dining, color: AppColors.primary)),
+                            leading: CircleAvatar(
+                              radius: 30,
+                              backgroundColor: Colors.orange.shade50,
+                              child: imagePath == null || imagePath.isEmpty || (!fileExists && !imagePath.startsWith('http'))
+                                  ? const Icon(Icons.bakery_dining, color: AppColors.primary, size: 30)
+                                  : ClipOval(
+                                      child: imagePath.startsWith('http')
+                                          ? Image.network(
+                                              imagePath,
+                                              width: 60,
+                                              height: 60,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => const Icon(Icons.bakery_dining, color: AppColors.primary, size: 30),
+                                            )
+                                          : Image.file(
+                                              File(imagePath),
+                                              width: 60,
+                                              height: 60,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => const Icon(Icons.bakery_dining, color: AppColors.primary, size: 30),
+                                            ),
+                                    ),
+                            ),
                             title: Text(p['name'] ?? ''),
                             subtitle: Text(p['category'] ?? ''),
                             trailing: Column(

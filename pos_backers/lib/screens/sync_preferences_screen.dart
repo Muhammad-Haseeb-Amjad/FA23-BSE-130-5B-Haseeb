@@ -56,26 +56,54 @@ class _SyncPreferencesScreenState extends State<SyncPreferencesScreen> {
   Future<void> _syncNow() async {
     setState(() => _status = 'Syncing...');
     
-    int totalCount = 0;
-    
-    // Sync products, customers, then sales
-    totalCount += await OfflineQueueService.instance.syncPendingProducts(SupabaseService.instance.client);
-    totalCount += await OfflineQueueService.instance.syncPendingCustomers(SupabaseService.instance.client);
-    totalCount += await OfflineQueueService.instance.syncPendingSales(SupabaseService.instance.client);
-    
-    final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
-    await prefs.setString('last_sync', now.toIso8601String());
-    
-    // Reload pending items
-    _pendingSales = await OfflineQueueService.instance.getPendingSales();
-    _pendingProducts = await OfflineQueueService.instance.getPendingProducts();
-    _pendingCustomers = await OfflineQueueService.instance.getPendingCustomers();
-    
-    setState(() {
-      _lastSync = now;
-      _status = 'Sync complete ($totalCount pushed)';
-    });
+    try {
+      // Ensure Supabase is initialized
+      await SupabaseService.instance.ensureInitialized();
+      
+      int totalCount = 0;
+      
+      // Sync products, customers, then sales
+      totalCount += await OfflineQueueService.instance.syncPendingProducts(SupabaseService.instance.client);
+      totalCount += await OfflineQueueService.instance.syncPendingCustomers(SupabaseService.instance.client);
+      totalCount += await OfflineQueueService.instance.syncPendingSales(SupabaseService.instance.client);
+      
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now();
+      await prefs.setString('last_sync', now.toIso8601String());
+      
+      // Reload pending items
+      _pendingSales = await OfflineQueueService.instance.getPendingSales();
+      _pendingProducts = await OfflineQueueService.instance.getPendingProducts();
+      _pendingCustomers = await OfflineQueueService.instance.getPendingCustomers();
+      
+      setState(() {
+        _lastSync = now;
+        _status = 'Sync complete ($totalCount pushed)';
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✓ Synced $totalCount items to cloud'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Sync error: $e');
+      setState(() => _status = 'Sync failed: $e');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sync failed: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _savePrefs() async {

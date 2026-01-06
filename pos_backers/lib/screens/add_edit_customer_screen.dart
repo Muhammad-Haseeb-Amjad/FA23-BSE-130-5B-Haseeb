@@ -20,7 +20,7 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
   late final TextEditingController _phone = TextEditingController(text: widget.customer?['phone'] ?? '');
   late final TextEditingController _email = TextEditingController(text: widget.customer?['email'] ?? '');
   late final TextEditingController _address = TextEditingController(text: widget.customer?['address'] ?? '');
-  late final TextEditingController _points = TextEditingController(text: widget.customer?['points']?.toString() ?? '0');
+  late final TextEditingController _points = TextEditingController(text: (widget.customer?['loyalty_points'] ?? widget.customer?['points'])?.toString() ?? '0');
   bool _saving = false;
   bool _online = true;
   late final _connSub = ConnectivityService.instance.connectivityStream.listen((online) {
@@ -41,8 +41,25 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
-    final id = widget.customer?['id'] ?? const Uuid().v4();
-    final data = {
+    
+    // Check connectivity status
+    final online = await ConnectivityService.instance.isOnline;
+    
+    var id = widget.customer?['id'] ?? const Uuid().v4();
+    
+    // Full data for local DB (includes address)
+    final localData = {
+      'id': id.toString(),
+      'name': _name.text.trim(),
+      'phone': _phone.text.trim(),
+      'email': _email.text.trim(),
+      'address': _address.text.trim(),
+      'loyalty_points': int.tryParse(_points.text) ?? 0,
+      'created_at': widget.customer?['created_at'] ?? DateTime.now().toIso8601String(),
+    };
+    
+    // Supabase data (no address column in Supabase customers table)
+    final supabaseData = {
       'id': id.toString(),
       'name': _name.text.trim(),
       'phone': _phone.text.trim(),
@@ -54,45 +71,73 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
     
     try {
       bool savedToSupabase = false;
+      String? errorMsg;
       
       // Try to save to Supabase when online
-      if (_online) {
+      if (online) {
+        final client = SupabaseService.instance.client;
         try {
-          final client = SupabaseService.instance.client;
           if (widget.customer == null) {
-            await client.from('customers').insert(data);
+            // Try normal insert first (with id)
+            await client.from('customers').insert(supabaseData);
           } else {
-            final updateData = Map<String, dynamic>.from(data)..remove('id')..remove('created_at');
+            final updateData = Map<String, dynamic>.from(supabaseData)..remove('id')..remove('created_at');
             await client.from('customers').update(updateData).eq('id', id);
           }
           savedToSupabase = true;
+          print('✅ Customer saved to Supabase: $id');
         } catch (e) {
-          // Supabase failed, queue for later sync
-          print('Supabase save failed: $e');
-          await OfflineQueueService.instance.enqueueCustomer(data);
+          errorMsg = e.toString();
+          print('❌ Supabase save failed (with id). Retrying without id... Error: $e');
+          // Retry for new customers without id (in case Supabase uses SERIAL integer id)
+          if (widget.customer == null) {
+            try {
+              final insertData = Map<String, dynamic>.from(supabaseData)..remove('id');
+              final res = await client.from('customers').insert(insertData).select('id').single();
+              if (res != null && res['id'] != null) {
+                id = res['id'];
+                savedToSupabase = true;
+                errorMsg = null;
+                print('✅ Customer inserted with new id: $id');
+              }
+            } catch (e2) {
+              errorMsg = e2.toString();
+              print('❌ Retry insert without id failed: $e2');
+              await OfflineQueueService.instance.enqueueCustomer(localData);
+            }
+          } else {
+            await OfflineQueueService.instance.enqueueCustomer(localData);
+          }
         }
       } else {
         // Offline - queue the customer for sync
-        await OfflineQueueService.instance.enqueueCustomer(data);
+        await OfflineQueueService.instance.enqueueCustomer(localData);
       }
       
       // Always save to local database
-      final localData = {
-        ...data,
+      final localDataWithSync = {
+        ...localData,
         'synced': savedToSupabase ? 1 : 0,
       };
       
       if (widget.customer == null) {
-        await LocalDatabaseService.instance.insertCustomer(localData);
+        // Ensure local id matches Supabase id (if one was generated server-side)
+        localDataWithSync['id'] = id.toString();
+        await LocalDatabaseService.instance.insertCustomer(localDataWithSync);
       } else {
-        await LocalDatabaseService.instance.update('customers', localData, id.toString());
+        await LocalDatabaseService.instance.update('customers', localDataWithSync, id.toString());
       }
       
       if (!mounted) return;
       
-      if (!_online || !savedToSupabase) {
+      if (savedToSupabase) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Customer saved locally. Will sync when online.'), duration: Duration(seconds: 2)),
+          const SnackBar(content: Text('✓ Customer saved and synced to cloud.'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
+        );
+      } else {
+        final msg = errorMsg != null && errorMsg.length < 100 ? errorMsg : 'Customer saved locally. Will sync when online.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
         );
       }
       

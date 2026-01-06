@@ -26,24 +26,26 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   Future<List<Map<String, dynamic>>> _load() async {
     try {
+      // Load local first so restored backups are visible while online
+      var products = await LocalDatabaseService.instance.query('products');
+
       if (!_offline) {
         try {
           final res = await SupabaseService.instance.client.from('products').select('id, name, category, quantity');
-          final products = List<Map<String, dynamic>>.from(res);
-          
-          // Cache to local database
-          for (final product in products) {
-            await LocalDatabaseService.instance.insertProduct({...product, 'synced': 1});
+          final remote = List<Map<String, dynamic>>.from(res);
+
+          if (remote.isNotEmpty) {
+            for (final product in remote) {
+              await LocalDatabaseService.instance.insertProduct({...product, 'synced': 1});
+            }
+            products = remote;
           }
-          
-          return products;
         } catch (e) {
-          print('Supabase fetch failed, loading from local DB: $e');
+          print('Supabase fetch failed, keeping local cache: $e');
         }
       }
-      
-      // Load from local database
-      return await LocalDatabaseService.instance.query('products');
+
+      return products;
     } catch (e) {
       print('Error loading inventory: $e');
       return [];

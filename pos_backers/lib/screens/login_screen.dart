@@ -22,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showPassword = false;
   bool _offline = false;
   late StreamSubscription<bool> _connSub;
+  bool _useSupabase = true;
 
   @override
   void initState() {
@@ -41,6 +42,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // If user selects SQLite (offline) just proceed to app without Supabase auth
+    if (!_useSupabase) {
+      final email = _emailController.text.trim().toLowerCase();
+      final pass = _passwordController.text.trim();
+
+      final isAdmin = email == 'admin@backery.com' && (pass == 'admin@123' || pass == 'admin123');
+
+      if (isAdmin) {
+        context.go('/dashboard');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Offline login failed: invalid admin credentials')),
+        );
+      }
+      return;
+    }
+
     setState(() => _loading = true);
     try {
       await SupabaseService.instance.ensureInitialized();
@@ -70,22 +89,50 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               OfflineBanner(isOffline: _offline),
               const SizedBox(height: 20),
-              Row(
+              Column(
                 children: const [
-                  CircleAvatar(radius: 26, backgroundColor: Colors.white, child: Icon(Icons.bakery_dining, color: AppColors.primary, size: 30)),
-                  SizedBox(width: 12),
-                  Text('BreadBox POS', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                  CircleAvatar(radius: 32, backgroundColor: Colors.white, child: Icon(Icons.bakery_dining, color: AppColors.primary, size: 34)),
+                  SizedBox(height: 10),
+                  Text('BreadBox POS', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
                 ],
               ),
               const SizedBox(height: 30),
               Text('Welcome back, baker 👋', style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 8),
-              Text('Sign in to continue to your bakery workspace.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted)),
-              const SizedBox(height: 28),
+              Text('Sign in to continue to your bakery workspace.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted), textAlign: TextAlign.center),
+              const SizedBox(height: 22),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text('Login using selected backend', style: TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      color: Colors.white,
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                    ),
+                    child: ToggleButtons(
+                      isSelected: [_useSupabase, !_useSupabase],
+                      borderRadius: BorderRadius.circular(20),
+                      fillColor: AppColors.primary,
+                      selectedColor: Colors.white,
+                      color: AppColors.accent,
+                      constraints: const BoxConstraints(minWidth: 120, minHeight: 42),
+                      children: const [
+                        Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('Supabase')),
+                        Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('SQLite (Offline)')),
+                      ],
+                      onPressed: (index) => setState(() => _useSupabase = index == 0),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               Form(
                 key: _formKey,
                 child: Column(

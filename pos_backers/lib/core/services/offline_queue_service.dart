@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'local_database_service.dart';
 
 class OfflineQueueService {
   OfflineQueueService._();
@@ -190,25 +191,70 @@ class OfflineQueueService {
   Future<int> syncPendingCustomers(SupabaseClient client) async {
     await init();
     final pending = await getPendingCustomers();
+    print('🔄 Starting customer sync. Pending: ${pending.length}');
+    
+    if (pending.isEmpty) {
+      print('✓ No customers to sync');
+      return 0;
+    }
+    
     int success = 0;
+    final List<Map<String, dynamic>> failedCustomers = [];
+    
     for (final customer in pending) {
       try {
-        final id = customer['id'];
-        final data = Map<String, dynamic>.from(customer)..remove('id');
-        // Try upsert in case customer exists
-        await client.from('customers').upsert({'id': id, ...data});
-        success++;
-        print('Synced customer $id');
+        var id = customer['id'];
+        print('Syncing customer: $id');
+        
+        // Remove fields not in Supabase schema (address, synced)
+        final data = Map<String, dynamic>.from(customer)
+          ..remove('id')
+          ..remove('synced')
+          ..remove('address'); // Supabase customers table doesn't have address column
+        
+        try {
+          // First try upsert with id
+          await client.from('customers').upsert({'id': id, ...data});
+          success++;
+          print('✓ Synced customer $id');
+        } catch (e) {
+          // Fallback: insert without id (for integer PK tables)
+          print('⚠ Upsert with id failed for customer $id, retrying without id. Error: $e');
+          try {
+            final res = await client.from('customers').insert(data).select('id').single();
+            if (res != null && res['id'] != null) {
+              final newId = res['id'];
+              // Update local DB to new id so future edits point to the same record
+              final db = LocalDatabaseService.instance;
+              final updated = Map<String, dynamic>.from(customer);
+              updated['id'] = newId.toString();
+              updated['synced'] = 1;
+              await db.update('customers', updated, id.toString());
+              id = newId;
+              success++;
+              print('✓ Inserted customer with new id $newId and updated local mapping');
+            }
+          } catch (e2) {
+            print('❌ Failed to sync customer $id (both attempts): $e2');
+            failedCustomers.add(customer);
+          }
+        }
       } catch (e) {
-        print('Failed to sync customer: $e');
+        print('❌ Failed to sync customer: $e');
+        failedCustomers.add(customer);
       }
     }
-    if (success == pending.length) {
+    
+    // Update queue: remove successful, keep failed
+    if (failedCustomers.isEmpty) {
       await clearPendingCustomers();
+      print('✓ All customers synced successfully');
     } else {
-      final remaining = pending.skip(success).toList();
-      await _box?.put(_keyCustomers, remaining);
+      await _box?.put(_keyCustomers, failedCustomers);
+      print('⚠ ${failedCustomers.length} customers failed to sync and remain in queue');
     }
+    
+    print('📊 Customer sync complete: $success synced, ${failedCustomers.length} failed');
     return success;
   }
 

@@ -25,19 +25,30 @@ class _PosScreenState extends State<PosScreen> {
   bool _taxEnabled = true;
   bool _taxExclusive = true;
   List<Map<String, dynamic>> _taxRules = [];
+  // Per-sale tax application state
+  bool _applyTax = true;
+  List<int> _selectedTaxRuleIndices = [];
+  // Customer selection state
+  List<Map<String, dynamic>> _customers = [];
+  String? _customerId;
+  String? _customerName;
+  bool _walkInCustomer = true;
   double _discountAmount = 0;
   bool _settingsLoaded = false;
   double _discount = 0;
   bool _percentDiscount = true;
   double _taxAmount = 0;
   double _total = 0;
-  late final _connSub = ConnectivityService.instance.connectivityStream.listen((online) => setState(() => _offline = !online));
+  late final _connSub = ConnectivityService.instance.connectivityStream.listen(
+    (online) => setState(() => _offline = !online),
+  );
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
     _load();
+    _loadCustomers();
     _recalculate();
   }
 
@@ -49,31 +60,46 @@ class _PosScreenState extends State<PosScreen> {
 
   Future<void> _load() async {
     try {
-      List<Map<String, dynamic>> products;
-      
+      // Always read local first so restored backups show even when online
+      var products = await LocalDatabaseService.instance.query('products');
+
       if (!_offline) {
         try {
-          final res = await SupabaseService.instance.client.from('products').select('id, name, price, quantity, barcode');
-          products = List<Map<String, dynamic>>.from(res);
-          
-          // Cache to local database
-          for (final product in products) {
-            await LocalDatabaseService.instance.insertProduct({...product, 'synced': 1});
+          final res = await SupabaseService.instance.client
+              .from('products')
+              .select('id, name, price, quantity, barcode');
+          final remote = List<Map<String, dynamic>>.from(res);
+
+          if (remote.isNotEmpty) {
+            // Cache to local database and use remote as source of truth
+            for (final product in remote) {
+              await LocalDatabaseService.instance.insertProduct({
+                ...product,
+                'synced': 1,
+              });
+            }
+            products = remote;
           }
         } catch (e) {
-          // Fall back to local database
-          products = await LocalDatabaseService.instance.query('products');
+          // Ignore and keep local snapshot
+          print('Supabase fetch failed, using local cache: $e');
         }
-      } else {
-        // Load from local database when offline
-        products = await LocalDatabaseService.instance.query('products');
       }
-      
+
       setState(() => _products = products);
       _recalculate();
     } catch (e) {
       if (!mounted) return;
       print('Error loading products: $e');
+    }
+  }
+
+  Future<void> _loadCustomers() async {
+    try {
+      final rows = await LocalDatabaseService.instance.query('customers');
+      setState(() => _customers = rows);
+    } catch (e) {
+      print('Error loading customers: $e');
     }
   }
 
@@ -91,6 +117,12 @@ class _PosScreenState extends State<PosScreen> {
         _taxExclusive = exclusive;
         _taxRules = rules;
         _settingsLoaded = true;
+        // Initialize per-sale tax state based on settings
+        _applyTax = _taxEnabled;
+        _selectedTaxRuleIndices = List.generate(
+          _taxRules.length,
+          (i) => i,
+        ).where((i) => (_taxRules[i]['active'] ?? true) == true).toList();
       });
     }
   }
@@ -101,22 +133,23 @@ class _PosScreenState extends State<PosScreen> {
     }
     double base = subtotal;
     double tax = 0;
-    if (_taxEnabled && _taxRules.isNotEmpty) {
-      for (final r in _taxRules) {
-        if ((r['active'] ?? true) == true) {
-          final rate = (r['rate'] as num).toDouble();
-          if (_taxExclusive) {
-            tax += base * (rate / 100);
-          } else {
-            tax += base - base / (1 + rate / 100);
-          }
+    if (_applyTax && _selectedTaxRuleIndices.isNotEmpty) {
+      for (final idx in _selectedTaxRuleIndices) {
+        final r = _taxRules[idx];
+        final rate = (r['rate'] as num).toDouble();
+        if (_taxExclusive) {
+          tax += base * (rate / 100);
+        } else {
+          tax += base - base / (1 + rate / 100);
         }
       }
     }
     var baseTotal = base + tax;
     double discountAmount = 0;
     if (_discount > 0) {
-      discountAmount = _percentDiscount ? baseTotal * (_discount / 100) : _discount;
+      discountAmount = _percentDiscount
+          ? baseTotal * (_discount / 100)
+          : _discount;
       baseTotal -= discountAmount;
     }
     if (mounted) {
@@ -150,85 +183,307 @@ class _PosScreenState extends State<PosScreen> {
     _recalculate();
   }
 
-  double get subtotal => _cart.fold(0, (sum, item) => sum + (item['qty'] as int) * (item['price'] as num));
+  double get subtotal => _cart.fold(
+    0,
+    (sum, item) => sum + (item['qty'] as int) * (item['price'] as num),
+  );
 
   Future<void> _scanAndAdd() async {
     try {
-      final result = await BarcodeScanner.scan(options: const ScanOptions(useCamera: -1));
+      final result = await BarcodeScanner.scan(
+        options: const ScanOptions(useCamera: -1),
+      );
       final code = result.rawContent;
       if (code.isEmpty) return;
       final match = _products.firstWhere(
-        (p) => (p['barcode']?.toString() == code) || p['id'].toString() == code || p['name'].toString().toLowerCase().contains(code.toLowerCase()),
+        (p) =>
+            (p['barcode']?.toString() == code) ||
+            p['id'].toString() == code ||
+            p['name'].toString().toLowerCase().contains(code.toLowerCase()),
         orElse: () => {},
       );
       if (match.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No product found for "$code"')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('No product found for "$code"')));
       } else {
         _addToCart(match);
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Scan failed: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Scan failed: $e')));
     }
   }
 
   void _showDiscountDialog() {
     final controller = TextEditingController(text: _discount.toString());
+    // Local copies for tax controls inside discount dialog
+    bool applyTax = _applyTax;
+    final selected = Set<int>.from(_selectedTaxRuleIndices);
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Apply discount'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Value'),
-            ),
-            const SizedBox(height: 8),
-            Row(
+      builder: (_) => StatefulBuilder(
+        builder: (context, setLocal) => AlertDialog(
+          title: const Text('Discount & Tax'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: RadioListTile<bool>(
-                    value: true,
-                    groupValue: _percentDiscount,
-                    onChanged: (v) => setState(() => _percentDiscount = v ?? true),
-                    title: const Text('%'),
+                // Discount controls
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Discount value',
                   ),
                 ),
-                Expanded(
-                  child: RadioListTile<bool>(
-                    value: false,
-                    groupValue: _percentDiscount,
-                    onChanged: (v) => setState(() => _percentDiscount = v ?? false),
-                    title: const Text('Fixed'),
-                  ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<bool>(
+                        value: true,
+                        groupValue: _percentDiscount,
+                        onChanged: (v) =>
+                            setLocal(() => _percentDiscount = v ?? true),
+                        title: const Text('%'),
+                      ),
+                    ),
+                    Expanded(
+                      child: RadioListTile<bool>(
+                        value: false,
+                        groupValue: _percentDiscount,
+                        onChanged: (v) =>
+                            setLocal(() => _percentDiscount = v ?? false),
+                        title: const Text('Fixed'),
+                      ),
+                    ),
+                  ],
                 ),
+                const Divider(),
+                // Tax controls (moved inside discount dialog)
+                SwitchListTile(
+                  title: const Text('Apply tax to this sale'),
+                  value: applyTax,
+                  onChanged: (v) => setLocal(() => applyTax = v),
+                ),
+                ..._taxRules.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final r = entry.value;
+                  final active = (r['active'] ?? true) == true;
+                  return CheckboxListTile(
+                    title: Text('${r['name']} (${r['rate']}%)'),
+                    subtitle: active
+                        ? null
+                        : const Text(
+                            'Inactive in settings',
+                            style: TextStyle(color: Colors.redAccent),
+                          ),
+                    value: selected.contains(i),
+                    onChanged: (v) => setLocal(() {
+                      if (v == true) {
+                        selected.add(i);
+                      } else {
+                        selected.remove(i);
+                      }
+                    }),
+                  );
+                }).toList(),
               ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _discount = double.tryParse(controller.text) ?? 0;
+                setState(() {
+                  _applyTax = applyTax;
+                  _selectedTaxRuleIndices = selected.toList()..sort();
+                });
+                _recalculate();
+                Navigator.pop(context);
+              },
+              child: const Text('Apply'),
             ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              _discount = double.tryParse(controller.text) ?? 0;
-              setState(() {});
-              _recalculate();
-              Navigator.pop(context);
-            },
-            child: const Text('Apply'),
-          )
-        ],
+      ),
+    );
+  }
+
+  void _showCustomerDialog() {
+    String query = '';
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setLocal) {
+          final filtered = _customers
+              .where(
+                (c) =>
+                    (c['name'] ?? '').toString().toLowerCase().contains(query),
+              )
+              .toList();
+          return AlertDialog(
+            title: const Text('Select Customer'),
+            content: SizedBox(
+              width: 500,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SwitchListTile(
+                    title: const Text('Walk-in customer'),
+                    value: _walkInCustomer,
+                    onChanged: (v) => setLocal(() => _walkInCustomer = v),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.search),
+                      hintText: 'Search regular customers',
+                    ),
+                    onChanged: (v) => setLocal(() => query = v.toLowerCase()),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final c = filtered[index];
+                        final selected =
+                            _customerId == c['id'] && !_walkInCustomer;
+                        return ListTile(
+                          title: Text(c['name'] ?? ''),
+                          subtitle: Text(
+                            (c['phone'] ?? c['email'] ?? '').toString(),
+                          ),
+                          trailing: selected
+                              ? const Icon(
+                                  Icons.check_circle,
+                                  color: AppColors.primary,
+                                )
+                              : null,
+                          onTap: () => setLocal(() {
+                            _walkInCustomer = false;
+                            _customerId = c['id']?.toString();
+                            _customerName = c['name']?.toString();
+                          }),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (_walkInCustomer) {
+                    setState(() {
+                      _customerId = null;
+                      _customerName = null;
+                    });
+                  } else {
+                    setState(() {});
+                  }
+                  Navigator.pop(context);
+                },
+                child: const Text('Apply'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showTaxDialog() {
+    // Local mutable copies for dialog
+    bool applyTax = _applyTax;
+    final selected = Set<int>.from(_selectedTaxRuleIndices);
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setLocal) {
+          return AlertDialog(
+            title: const Text('Apply Taxes'),
+            content: SizedBox(
+              width: 400,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Apply tax to this sale'),
+                      value: applyTax,
+                      onChanged: (v) => setLocal(() => applyTax = v),
+                    ),
+                    const Divider(),
+                    ..._taxRules.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final r = entry.value;
+                      final active = (r['active'] ?? true) == true;
+                      return CheckboxListTile(
+                        title: Text('${r['name']} (${r['rate']}%)'),
+                        subtitle: active
+                            ? null
+                            : const Text(
+                                'Inactive in settings',
+                                style: TextStyle(color: Colors.redAccent),
+                              ),
+                        value: selected.contains(i),
+                        onChanged: (v) => setLocal(() {
+                          if (v == true) {
+                            selected.add(i);
+                          } else {
+                            selected.remove(i);
+                          }
+                        }),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _applyTax = applyTax;
+                    _selectedTaxRuleIndices = selected.toList()..sort();
+                  });
+                  _recalculate();
+                  Navigator.pop(context);
+                },
+                child: const Text('Apply'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _products.where((p) => p['name'].toString().toLowerCase().contains(_query)).toList();
+    final filtered = _products
+        .where((p) => p['name'].toString().toLowerCase().contains(_query))
+        .toList();
     return Scaffold(
       appBar: AppBar(title: const Text('POS Billing')),
       floatingActionButton: FloatingActionButton(
@@ -254,8 +509,12 @@ class _PosScreenState extends State<PosScreen> {
                   Padding(
                     padding: const EdgeInsets.all(12),
                     child: TextField(
-                      decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Search products'),
-                      onChanged: (v) => setState(() => _query = v.toLowerCase()),
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        hintText: 'Search products',
+                      ),
+                      onChanged: (v) =>
+                          setState(() => _query = v.toLowerCase()),
                     ),
                   ),
                   SizedBox(
@@ -272,7 +531,10 @@ class _PosScreenState extends State<PosScreen> {
                                 title: Text(p['name'] ?? ''),
                                 subtitle: Text('$_currencySymbol${p['price']}'),
                                 trailing: IconButton(
-                                  icon: const Icon(Icons.add_circle, color: AppColors.primary),
+                                  icon: const Icon(
+                                    Icons.add_circle,
+                                    color: AppColors.primary,
+                                  ),
                                   onPressed: () => _addToCart(p),
                                 ),
                               );
@@ -291,13 +553,27 @@ class _PosScreenState extends State<PosScreen> {
                                     final item = _cart[index];
                                     return ListTile(
                                       title: Text(item['name']),
-                                      subtitle: Text('Qty ${item['qty']} x $_currencySymbol${item['price']}'),
+                                      subtitle: Text(
+                                        'Qty ${item['qty']} x $_currencySymbol${item['price']}',
+                                      ),
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => _updateQty(index, -1)),
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.remove_circle_outline,
+                                            ),
+                                            onPressed: () =>
+                                                _updateQty(index, -1),
+                                          ),
                                           Text(item['qty'].toString()),
-                                          IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => _updateQty(index, 1)),
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.add_circle_outline,
+                                            ),
+                                            onPressed: () =>
+                                                _updateQty(index, 1),
+                                          ),
                                         ],
                                       ),
                                     );
@@ -307,14 +583,87 @@ class _PosScreenState extends State<PosScreen> {
                               Padding(
                                 padding: const EdgeInsets.all(12),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
-                                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Subtotal'), Text('$_currencySymbol${subtotal.toStringAsFixed(2)}')]),
-                                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Tax'), Text('$_currencySymbol${_taxAmount.toStringAsFixed(2)}')]),
+                                    // Customer selection above subtotal
+                                    InkWell(
+                                      onTap: _showCustomerDialog,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: const [
+                                              Icon(
+                                                Icons.person_outline,
+                                                size: 18,
+                                              ),
+                                              SizedBox(width: 6),
+                                              Text('Customer'),
+                                            ],
+                                          ),
+                                          Text(
+                                            _walkInCustomer
+                                                ? 'Walk-in'
+                                                : (_customerName ?? 'Select'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text('Subtotal'),
+                                        Text(
+                                          '$_currencySymbol${subtotal.toStringAsFixed(2)}',
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text('Tax'),
+                                        Text(
+                                          '$_currencySymbol${_taxAmount.toStringAsFixed(2)}',
+                                        ),
+                                      ],
+                                    ),
                                     if (_discount > 0)
-                                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Discount ${_percentDiscount ? '(%)' : ''}'), Text('-$_currencySymbol${_discountAmount.toStringAsFixed(2)}')]),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'Discount ${_percentDiscount ? '(%)' : ''}',
+                                          ),
+                                          Text(
+                                            '-$_currencySymbol${_discountAmount.toStringAsFixed(2)}',
+                                          ),
+                                        ],
+                                      ),
                                     const Divider(),
-                                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Total', style: TextStyle(fontWeight: FontWeight.w800)), Text('$_currencySymbol${_total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w800))]),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text(
+                                          'Total',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        Text(
+                                          '$_currencySymbol${_total.toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                     const SizedBox(height: 10),
                                     Row(
                                       children: [
@@ -331,18 +680,33 @@ class _PosScreenState extends State<PosScreen> {
                                             onPressed: _cart.isEmpty
                                                 ? null
                                                 : () async {
-                                                    final result = await Navigator.of(context).push(MaterialPageRoute(
-                                                      builder: (_) => PosPaymentScreen(
-                                                        cart: _cart,
-                                                        subtotal: subtotal,
-                                                        tax: _taxAmount,
-                                                        total: _total,
-                                                        currencySymbol: _currencySymbol,
-                                                        currencyCode: _currencyCode,
-                                                      ),
-                                                    ));
+                                                    final result =
+                                                        await Navigator.of(
+                                                          context,
+                                                        ).push(
+                                                          MaterialPageRoute(
+                                                            builder: (_) => PosPaymentScreen(
+                                                              cart: _cart,
+                                                              subtotal:
+                                                                  subtotal,
+                                                              tax: _taxAmount,
+                                                              total: _total,
+                                                              currencySymbol:
+                                                                  _currencySymbol,
+                                                              currencyCode:
+                                                                  _currencyCode,
+                                                              customerName:
+                                                                  _walkInCustomer
+                                                                  ? 'Walk-in'
+                                                                  : (_customerName ??
+                                                                        'Regular'),
+                                                            ),
+                                                          ),
+                                                        );
                                                     if (result == true) {
-                                                      setState(() => _cart.clear());
+                                                      setState(
+                                                        () => _cart.clear(),
+                                                      );
                                                     }
                                                   },
                                             child: const Text('Checkout'),

@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:barcode_scan2/barcode_scan2.dart';
 import 'package:uuid/uuid.dart';
+import 'package:path_provider/path_provider.dart';
 import '../core/services/connectivity_service.dart';
 import '../core/services/local_database_service.dart';
 import '../core/services/offline_queue_service.dart';
@@ -49,9 +51,18 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     _qty = TextEditingController(text: widget.product?['quantity']?.toString() ?? '');
     _batchDate = TextEditingController(text: widget.product?['batch_date'] ?? '');
     _expiryDate = TextEditingController(text: widget.product?['expiry_date'] ?? '');
-    _lowStockAlert = widget.product?['low_stock_alert'] ?? true;
-    _expiryAlert = widget.product?['expiry_alert'] ?? true;
+    // Convert INTEGER (0/1) from SQLite to bool
+    _lowStockAlert = _toBool(widget.product?['low_stock_alert']) ?? true;
+    _expiryAlert = _toBool(widget.product?['expiry_alert']) ?? true;
     _imagePath = widget.product?['image_path'];
+  }
+
+  // Helper to convert SQLite INTEGER (0/1) to bool
+  bool? _toBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    return null;
   }
 
   @override
@@ -72,6 +83,20 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final id = (widget.product?['id'] ?? const Uuid().v4()).toString();
+    String? uploadedImageUrl;
+
+    // Upload image to Supabase Storage when online and the path is local
+    if (_online && _imagePath != null && !_imagePath!.startsWith('http')) {
+      uploadedImageUrl = await _uploadImageToSupabase(_imagePath!, id);
+      if (uploadedImageUrl != null) {
+        // Update in-memory path so the current screen shows the uploaded image URL
+        setState(() => _imagePath = uploadedImageUrl);
+      }
+    }
+
+    // Keep existing remote URL when editing
+    final remoteImageUrl = uploadedImageUrl ?? (_imagePath?.startsWith('http') == true ? _imagePath : null);
+
     final data = {
       'id': id,
       'name': _name.text.trim(),
@@ -84,6 +109,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       'expiry_date': _expiryDate.text.isEmpty ? null : _expiryDate.text,
       'low_stock_alert': _lowStockAlert,
       'expiry_alert': _expiryAlert,
+      if (remoteImageUrl != null) 'image_path': remoteImageUrl,
       'created_at': widget.product?['created_at'] ?? DateTime.now().toIso8601String(),
     };
     
@@ -93,18 +119,28 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       // Try to save to Supabase when online
       if (_online) {
         try {
+          print('Attempting to save product to Supabase...');
           final client = SupabaseService.instance.client;
           if (widget.product == null) {
             await client.from('products').insert(data);
+            print('✅ Product inserted to Supabase: $id');
           } else {
             final updateData = Map<String, dynamic>.from(data)..remove('id')..remove('created_at');
             await client.from('products').update(updateData).eq('id', id);
+            print('✅ Product updated in Supabase: $id');
           }
           savedToSupabase = true;
-          print('Product saved to Supabase: $id');
         } catch (e) {
           // Supabase failed, queue for later sync
-          print('Supabase save failed, queuing product: $e');
+          print('❌ Supabase save failed, queuing product: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Cloud sync failed: ${e.toString().contains('RLS') || e.toString().contains('policy') ? 'Permission denied. Check RLS policies.' : e.toString().substring(0, 50)}'),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
           await OfflineQueueService.instance.enqueueProduct(data);
         }
       } else {
@@ -117,7 +153,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       final localData = {
         ...data,
         'synced': savedToSupabase ? 1 : 0,
-        if (_imagePath != null) 'image_path': _imagePath,
+        'image_path': remoteImageUrl ?? _imagePath,
+        // Convert bool to INTEGER for SQLite
+        'low_stock_alert': _lowStockAlert ? 1 : 0,
+        'expiry_alert': _expiryAlert ? 1 : 0,
       };
       
       if (widget.product == null) {
@@ -129,7 +168,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       if (!mounted) return;
       
       // Show appropriate message
-      if (!_online || !savedToSupabase) {
+      if (savedToSupabase) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Product saved and synced to cloud.'), duration: Duration(seconds: 2)),
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Product saved locally. Will sync when online.'), duration: Duration(seconds: 2)),
         );
@@ -156,7 +199,39 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   Future<void> _pickImage() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result != null && result.files.single.path != null) {
-      setState(() => _imagePath = result.files.single.path);
+      try {
+        // Copy image to app's documents directory for offline access
+        final sourceFile = File(result.files.single.path!);
+        print('Source file path: ${sourceFile.path}');
+        print('Source file exists: ${sourceFile.existsSync()}');
+        
+        if (!sourceFile.existsSync()) {
+          print('ERROR: Source file does not exist!');
+          return;
+        }
+        
+        final appDir = await getApplicationDocumentsDirectory();
+        print('App documents directory: ${appDir.path}');
+        
+        final imagesDir = Directory('${appDir.path}/product_images');
+        if (!imagesDir.existsSync()) {
+          imagesDir.createSync(recursive: true);
+          print('Created product_images directory');
+        }
+        
+        final fileName = 'product_${DateTime.now().millisecondsSinceEpoch}.${result.files.single.extension}';
+        final destinationFile = File('${imagesDir.path}/$fileName');
+        
+        await sourceFile.copy(destinationFile.path);
+        print('✅ Image copied to: ${destinationFile.path}');
+        print('Destination file exists: ${destinationFile.existsSync()}');
+        
+        setState(() => _imagePath = destinationFile.path);
+      } catch (e) {
+        print('❌ Failed to copy image: $e');
+        print('Using fallback path: ${result.files.single.path}');
+        setState(() => _imagePath = result.files.single.path);
+      }
     }
   }
 
@@ -170,6 +245,40 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Scan failed: $e')));
+    }
+  }
+
+  Future<String?> _uploadImageToSupabase(String path, String id) async {
+    try {
+      final file = File(path);
+      if (!file.existsSync()) {
+        print('Image file not found: $path');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image file not found. Please pick image again.')),
+          );
+        }
+        return null;
+      }
+      final ext = path.split('.').last;
+      final storagePath = 'products/$id.$ext';
+      print('Attempting to upload image to: product-images/$storagePath');
+      final storage = SupabaseService.instance.client.storage.from('product-images');
+      await storage.upload(storagePath, file, fileOptions: const FileOptions(upsert: true));
+      final url = storage.getPublicUrl(storagePath);
+      print('✅ Image uploaded successfully: $url');
+      return url;
+    } catch (e) {
+      print('❌ Image upload failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Image upload failed: ${e.toString().contains('Bucket') ? 'Storage bucket not configured' : 'Check permissions'}'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      return null;
     }
   }
 
@@ -258,7 +367,14 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: Colors.grey.shade300),
-                          image: _imagePath != null ? DecorationImage(image: FileImage(File(_imagePath!)), fit: BoxFit.cover) : null,
+                          image: _imagePath != null
+                              ? DecorationImage(
+                                  image: _imagePath!.startsWith('http')
+                                      ? NetworkImage(_imagePath!)
+                                      : FileImage(File(_imagePath!)) as ImageProvider,
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
                         ),
                         child: _imagePath == null ? const Icon(Icons.add_a_photo, color: AppColors.primary) : null,
                       ),
