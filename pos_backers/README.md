@@ -257,11 +257,6 @@ Below are key screens of the application. Add the PNG files to `assets/screensho
 - Reports – Sales analytics and summaries  
 	![Reports](assets/screenshots/reports_screen.png)
 
-### How to add your screenshots
-1. Save each screenshot image (PNG recommended) to `assets/screenshots/` using the filenames above.
-2. Commit and push the images to your repository.
-3. Markdown will automatically render them in this README.
-
 ---
 
 **Version**: 1.0.4  
