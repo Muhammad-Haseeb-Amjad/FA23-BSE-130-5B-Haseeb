@@ -340,6 +340,16 @@ class _PosPaymentScreenState extends State<PosPaymentScreen> {
                     ),
                   ],
                 ),
+                if ((widget.subtotal + widget.tax) - widget.total > 0)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Discount'),
+                      Text(
+                        '-${widget.currencySymbol}${((widget.subtotal + widget.tax) - widget.total).toStringAsFixed(2)}',
+                      ),
+                    ],
+                  ),
                 const Divider(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

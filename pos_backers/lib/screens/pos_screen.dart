@@ -352,31 +352,37 @@ class _PosScreenState extends State<PosScreen> {
                   ),
                   const SizedBox(height: 8),
                   Flexible(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final c = filtered[index];
-                        final selected =
-                            _customerId == c['id'] && !_walkInCustomer;
-                        return ListTile(
-                          title: Text(c['name'] ?? ''),
-                          subtitle: Text(
-                            (c['phone'] ?? c['email'] ?? '').toString(),
-                          ),
-                          trailing: selected
-                              ? const Icon(
-                                  Icons.check_circle,
-                                  color: AppColors.primary,
-                                )
-                              : null,
-                          onTap: () => setLocal(() {
-                            _walkInCustomer = false;
-                            _customerId = c['id']?.toString();
-                            _customerName = c['name']?.toString();
-                          }),
-                        );
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        await _loadCustomers();
+                        setLocal(() {});
                       },
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final c = filtered[index];
+                          final selected =
+                              _customerId == c['id'] && !_walkInCustomer;
+                          return ListTile(
+                            title: Text(c['name'] ?? ''),
+                            subtitle: Text(
+                              (c['phone'] ?? c['email'] ?? '').toString(),
+                            ),
+                            trailing: selected
+                                ? const Icon(
+                                    Icons.check_circle,
+                                    color: AppColors.primary,
+                                  )
+                                : null,
+                            onTap: () => setLocal(() {
+                              _walkInCustomer = false;
+                              _customerId = c['id']?.toString();
+                              _customerName = c['name']?.toString();
+                            }),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
@@ -665,52 +671,49 @@ class _PosScreenState extends State<PosScreen> {
                                       ],
                                     ),
                                     const SizedBox(height: 10),
-                                    Row(
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
                                       children: [
-                                        Expanded(
-                                          child: OutlinedButton.icon(
-                                            icon: const Icon(Icons.percent),
-                                            label: const Text('Discount'),
-                                            onPressed: _showDiscountDialog,
-                                          ),
+                                        OutlinedButton.icon(
+                                          icon: const Icon(Icons.percent),
+                                          label: const Text('Discount'),
+                                          onPressed: _showDiscountDialog,
                                         ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: ElevatedButton(
-                                            onPressed: _cart.isEmpty
-                                                ? null
-                                                : () async {
-                                                    final result =
-                                                        await Navigator.of(
-                                                          context,
-                                                        ).push(
-                                                          MaterialPageRoute(
-                                                            builder: (_) => PosPaymentScreen(
-                                                              cart: _cart,
-                                                              subtotal:
-                                                                  subtotal,
-                                                              tax: _taxAmount,
-                                                              total: _total,
-                                                              currencySymbol:
-                                                                  _currencySymbol,
-                                                              currencyCode:
-                                                                  _currencyCode,
-                                                              customerName:
-                                                                  _walkInCustomer
-                                                                  ? 'Walk-in'
-                                                                  : (_customerName ??
-                                                                        'Regular'),
-                                                            ),
+                                        const SizedBox(height: 8),
+                                        ElevatedButton(
+                                          onPressed: _cart.isEmpty
+                                              ? null
+                                              : () async {
+                                                  final result =
+                                                      await Navigator.of(
+                                                        context,
+                                                      ).push(
+                                                        MaterialPageRoute(
+                                                          builder: (_) => PosPaymentScreen(
+                                                            cart: _cart,
+                                                            subtotal: subtotal,
+                                                            tax: _taxAmount,
+                                                            total: _total,
+                                                            currencySymbol:
+                                                                _currencySymbol,
+                                                            currencyCode:
+                                                                _currencyCode,
+                                                            customerName:
+                                                                _walkInCustomer
+                                                                ? 'Walk-in'
+                                                                : (_customerName ??
+                                                                      'Regular'),
                                                           ),
-                                                        );
-                                                    if (result == true) {
-                                                      setState(
-                                                        () => _cart.clear(),
+                                                        ),
                                                       );
-                                                    }
-                                                  },
-                                            child: const Text('Checkout'),
-                                          ),
+                                                  if (result == true) {
+                                                    setState(
+                                                      () => _cart.clear(),
+                                                    );
+                                                  }
+                                                },
+                                          child: const Text('Checkout'),
                                         ),
                                       ],
                                     ),
