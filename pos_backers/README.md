@@ -245,6 +245,18 @@ Below are key screens of the application. Add the PNG files to `assets/screensho
 - POS Billing – Cart, customer, tax, discount, and checkout  
 	![POS Billing](assets/screenshots/pos_billing.png)
 
+- Settings – App settings hub  
+	![Settings](assets/screenshots/settings_main.png)
+
+- Sync Preferences – Online/offline backend selection and sync options  
+	![Sync Preferences](assets/screenshots/sync_preferences.png)
+
+- Inventory – Stock overview and adjustments  
+	![Inventory](assets/screenshots/inventory_screen.png)
+
+- Reports – Sales analytics and summaries  
+	![Reports](assets/screenshots/reports_screen.png)
+
 ### How to add your screenshots
 1. Save each screenshot image (PNG recommended) to `assets/screenshots/` using the filenames above.
 2. Commit and push the images to your repository.
