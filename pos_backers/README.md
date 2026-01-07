@@ -211,6 +211,47 @@ For support and queries:
 
 ---
 
-**Version**: 1.0.0  
+## 📸 Screenshots
+
+Below are key screens of the application. Add the PNG files to `assets/screenshots/` with the exact filenames shown below.
+
+- Backup & Restore – Select Backup dialog  
+	![Select Backup](assets/screenshots/backup_select_dialog.png)
+
+- Backup & Restore – Restore from Google Drive success  
+	![Restore Success](assets/screenshots/backup_restore_success.png)
+
+- Appearance – Theme selection (Dark Mode)  
+	![Appearance - Dark Mode](assets/screenshots/appearance_dark_mode.png)
+
+- About – App version and links  
+	![About Screen](assets/screenshots/about_app_version.png)
+
+- Backup & Restore – Export to File confirmation toast  
+	![Export to File Toast](assets/screenshots/export_to_file_toast.png)
+
+- Dashboard – Overview and best sellers  
+	![Dashboard Home](assets/screenshots/dashboard_home.png)
+
+- Edit Profile – Business information  
+	![Edit Profile](assets/screenshots/edit_profile.png)
+
+- Login – Supabase and SQLite (Offline) options  
+	![Login Screen](assets/screenshots/login_supabase.png)
+
+- Products – List with search and add product  
+	![Products List](assets/screenshots/products_list.png)
+
+- POS Billing – Cart, customer, tax, discount, and checkout  
+	![POS Billing](assets/screenshots/pos_billing.png)
+
+### How to add your screenshots
+1. Save each screenshot image (PNG recommended) to `assets/screenshots/` using the filenames above.
+2. Commit and push the images to your repository.
+3. Markdown will automatically render them in this README.
+
+---
+
+**Version**: 1.0.4  
 **Last Updated**: January 2026  
 **Developed with ❤️ using Flutter**
