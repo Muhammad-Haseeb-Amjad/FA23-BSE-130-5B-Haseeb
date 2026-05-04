@@ -8,9 +8,21 @@ Future<void> _pumpApp(WidgetTester tester) async {
   await _pumpAppWithSize(tester, const Size(430, 932));
 }
 
+/// Pumps CounterScreen directly (bypasses SplashScreen) so tests are fast
+/// and not affected by the splash navigation timer.
 Future<void> _pumpAppWithSize(WidgetTester tester, Size size) async {
   await tester.binding.setSurfaceSize(size);
-  await tester.pumpWidget(const DigitalTasbeehApp());
+  await tester.pumpWidget(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: const Color(0xFF4ADE80),
+        scaffoldBackgroundColor: const Color(0xFF1A2F2F),
+      ),
+      home: const CounterScreen(),
+    ),
+  );
   for (int i = 0; i < 200; i++) {
     await tester.pump(const Duration(milliseconds: 100));
     final menuReady = find.byIcon(Icons.menu).evaluate().isNotEmpty;
@@ -95,7 +107,7 @@ void main() {
     expect(find.text('0002'), findsOneWidget);
   });
 
-  testWidgets('tap exact center of Save button saves count', (
+  testWidgets('tap exact center of Save button opens save dhikr screen', (
     WidgetTester tester,
   ) async {
     await _pumpApp(tester);
@@ -109,10 +121,8 @@ void main() {
     await tester.tapAt(saveCenter);
     await tester.pumpAndSettle();
 
-    expect(find.text('Count saved'), findsOneWidget);
-
-    await _pumpApp(tester);
-    expect(find.text('0002'), findsOneWidget);
+    // Save now opens AddDhikrScreen — verify the screen appeared
+    expect(find.text('Add New Dhikr'), findsOneWidget);
   });
 
   testWidgets('tap slightly outside Save circle does nothing', (
@@ -190,10 +200,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('0001'), findsOneWidget);
 
+    // Save now opens AddDhikrScreen — dismiss it and verify count is still shown
     await tester.tap(find.byKey(const Key('save_tap_area')));
     await tester.pumpAndSettle();
+    // Close the AddDhikrScreen by tapping the close button
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
 
-    await _pumpAppWithSize(tester, const Size(800, 1280));
     expect(find.text('0001'), findsOneWidget);
   });
 

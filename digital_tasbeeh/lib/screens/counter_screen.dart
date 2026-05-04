@@ -8,6 +8,8 @@ import 'package:vibration/vibration.dart';
 
 import '../models/dhikr.dart';
 import '../services/storage_service.dart';
+import '../utils/dhikr_display.dart';
+import 'add_dhikr_screen.dart';
 import 'my_dhikrs_screen.dart';
 import 'prayer_sequence_screen.dart';
 import 'settings_screen.dart';
@@ -44,15 +46,22 @@ class _CounterScreenState extends State<CounterScreen> {
   static const double _allahCenterX = 0.511;
   static const double _allahCenterY = 0.754;
   static const double _allahRadiusFactor = 0.118;
-  static const double _lcdCenterX = 0.506;
-  static const double _lcdCenterY = 0.286;
-  static const double _lcdWidthFactor = 0.43;
-  static const double _lcdHeightFactor = 0.12;
+  // LCD inner screen in image-normalized coordinates (0–1 relative to image pixel size).
+  // Measured by pixel scan of lib/assets/tasbeeh.png (453x462):
+  // Inner LCD (inside gold border): left=142, top=92, right=313, bottom=164.
+  static const double _lcdImgLeft   = 142 / 453;  // 0.3135
+  static const double _lcdImgTop    = 92  / 462;  // 0.1991
+  static const double _lcdImgRight  = 313 / 453;  // 0.6909
+  static const double _lcdImgBottom = 164 / 462;  // 0.3550
+
+  // Image aspect ratio for BoxFit.contain letterbox compensation
+  static const double _imgAspect = 453 / 462; // 0.9805
 
   final StorageService _storage = StorageService();
   AudioPlayer? _audioPlayer;
 
   int _count = 0;
+  Dhikr? _activeDhikr; // currently selected dhikr from the list
   Map<String, dynamic> _settings = {};
   bool _isLoading = true;
   String _imageAssetPath = _primaryImageAsset;
@@ -190,6 +199,13 @@ class _CounterScreenState extends State<CounterScreen> {
       _count++;
     });
 
+    // If a dhikr is active, update its count in the database
+    if (_activeDhikr != null) {
+      final updated = _activeDhikr!.copyWith(currentCount: _count);
+      _activeDhikr = updated;
+      await _storage.saveDhikr(updated);
+    }
+
     if (_settings['vibration'] == true) {
       try {
         if (await Vibration.hasVibrator()) {
@@ -213,15 +229,67 @@ class _CounterScreenState extends State<CounterScreen> {
   }
 
   Future<void> _saveCurrentCount() async {
-    await _saveCount();
+    if (_activeDhikr != null) {
+      // Update the existing selected dhikr with the current count
+      final updated = _activeDhikr!.copyWith(currentCount: _count);
+      await _storage.saveDhikr(updated);
+      await _storage.setTasbeehCount(0);
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Count saved'),
-        backgroundColor: const Color(0xFF234141),
-      ),
-    );
+      if (!mounted) return;
+      // Reset main screen to fresh state
+      setState(() {
+        _activeDhikr = null;
+        _count = 0;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '"${updated.name}" updated successfully',
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: Colors.green.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.only(left: 16, right: 16, bottom: 90),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } else {
+      // No active dhikr — open AddDhikrScreen to create a new one
+      final result = await Navigator.push<Dhikr?>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AddDhikrScreen(initialCount: _count),
+        ),
+      );
+
+      if (result == null || !mounted) return;
+
+      await _storage.setTasbeehCount(0);
+      await _storage.setCurrentDhikrId(result.id);
+
+      // Reset main screen after saving new dhikr
+      setState(() {
+        _activeDhikr = null;
+        _count = 0;
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '"${result.name}" saved successfully',
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: Colors.green.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.only(left: 16, right: 16, bottom: 90),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Future<void> _confirmReset() async {
@@ -265,6 +333,7 @@ class _CounterScreenState extends State<CounterScreen> {
 
     setState(() {
       _count = result.currentCount;
+      _activeDhikr = result;
     });
     await _storage.setCurrentDhikrId(result.id);
   }
@@ -296,7 +365,7 @@ class _CounterScreenState extends State<CounterScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFF1A2F2F),
+        backgroundColor: Colors.transparent,
         body: Center(
           child: CircularProgressIndicator(color: Color(0xFF4ADE80)),
         ),
@@ -304,7 +373,7 @@ class _CounterScreenState extends State<CounterScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A2F2F),
+      backgroundColor: Colors.transparent,
       drawer: _buildSideDrawer(),
       body: SafeArea(
         child: Column(
@@ -312,6 +381,30 @@ class _CounterScreenState extends State<CounterScreen> {
             _buildTopBar(),
             const SizedBox(height: 20),
             _buildToggleButtons(),
+            if (_activeDhikr != null) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Builder(builder: (context) {
+                  final displayName = getDhikrDisplayName(_activeDhikr!.name);
+                  final arabic = isArabic(displayName);
+                  return Text(
+                    displayName,
+                    textAlign: TextAlign.center,
+                    textDirection: arabic ? TextDirection.rtl : TextDirection.ltr,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: const Color(0xFF4ADE80),
+                      fontSize: arabic ? 22 : 18,
+                      fontFamily: arabic ? 'Amiri' : null,
+                      fontWeight: FontWeight.w600,
+                      height: arabic ? 1.4 : null,
+                    ),
+                  );
+                }),
+              ),
+            ],
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -331,37 +424,57 @@ class _CounterScreenState extends State<CounterScreen> {
                             _imageAssetPath,
                             fit: BoxFit.contain,
                           ),
-                          Positioned(
-                            left: (imageSide * _mapContentX(_lcdCenterX)) -
-                                (imageSide * _mapContentWidth(_lcdWidthFactor) / 2),
-                            top: (imageSide * _mapContentY(_lcdCenterY)) -
-                                (imageSide * _mapContentHeight(_lcdHeightFactor) / 2),
-                            width: imageSide * _mapContentWidth(_lcdWidthFactor),
-                            height: imageSide * _mapContentHeight(_lcdHeightFactor),
-                            child: Center(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  _formattedCount,
-                                  key: _counterTextKey,
-                                  style: TextStyle(
-                                    color: Color(0xFF57FF7A),
-                                    fontSize: imageSide * _mapContentWidth(0.075),
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 5,
-                                    fontFamily: 'monospace',
-                                    shadows: const [
-                                      Shadow(
-                                        color: Color(0xAA1C7C39),
-                                        blurRadius: 10,
-                                        offset: Offset(0, 0),
+                          // LCD overlay: positioned using image-normalized coordinates.
+                          // BoxFit.contain: image renders at imageSide*_imgAspect wide,
+                          // centered with letterbox = imageSide*(1-_imgAspect)/2 on each side.
+                          Builder(builder: (context) {
+                            final renderedW = imageSide * _imgAspect;
+                            final renderedH = imageSide; // height fills fully (portrait image)
+                            final offsetX   = (imageSide - renderedW) / 2;
+                            const offsetY   = 0.0;
+                            final lcdLeft   = offsetX + _lcdImgLeft   * renderedW;
+                            final lcdTop    = offsetY + _lcdImgTop    * renderedH;
+                            final lcdWidth  = (_lcdImgRight - _lcdImgLeft)   * renderedW;
+                            final lcdHeight = (_lcdImgBottom - _lcdImgTop)   * renderedH;
+                            return Positioned(
+                              left:   lcdLeft,
+                              top:    lcdTop,
+                              width:  lcdWidth,
+                              height: lcdHeight,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(lcdHeight * 0.12),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  decoration: const BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0xFF6FE7DA),
+                                        Color(0xFF4FD1C5),
+                                        Color(0xFF2BB5A8),
+                                      ],
+                                      stops: [0.0, 0.5, 1.0],
+                                    ),
+                                  ),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      _formattedCount,
+                                      key: _counterTextKey,
+                                      style: TextStyle(
+                                        color: const Color(0xFF000000),
+                                        fontSize: lcdHeight * 0.88,
+                                        fontFamily: 'Digital7',
+                                        letterSpacing: 4,
+                                        height: 1.0,
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
+                            );
+                          }),
                           _buildCenteredCircleTapZone(
                             key: _allahTapKey,
                             imageSide: imageSide,
@@ -410,10 +523,10 @@ class _CounterScreenState extends State<CounterScreen> {
                             ),
                             _buildDebugRect(
                               imageSide: imageSide,
-                              centerX: _mapContentX(_lcdCenterX),
-                              centerY: _mapContentY(_lcdCenterY),
-                              width: imageSide * _mapContentWidth(_lcdWidthFactor),
-                              height: imageSide * _mapContentHeight(_lcdHeightFactor),
+                              centerX: _lcdImgLeft + (_lcdImgRight - _lcdImgLeft) / 2,
+                              centerY: _lcdImgTop + (_lcdImgBottom - _lcdImgTop) / 2,
+                              width: (_lcdImgRight - _lcdImgLeft) * imageSide * _imgAspect,
+                              height: (_lcdImgBottom - _lcdImgTop) * imageSide,
                               color: Colors.yellow,
                             ),
                           ],
@@ -453,6 +566,7 @@ class _CounterScreenState extends State<CounterScreen> {
               border: Border.all(color: const Color(0xFF8B7355), width: 2),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.workspace_premium,
@@ -478,16 +592,25 @@ class _CounterScreenState extends State<CounterScreen> {
 
   Widget _buildSideDrawer() {
     return Drawer(
-      backgroundColor: const Color(0xFF1A2F2F),
+      backgroundColor: const Color(0xFF071A17),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Menu',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 8, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Menu',
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
             ),
             const Divider(color: Colors.white24),

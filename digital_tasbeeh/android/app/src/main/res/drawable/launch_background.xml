@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+    <!-- Premium background: dark green gradient + glow + star pattern -->
+    <item>
         <bitmap
+            android:src="@drawable/native_splash_background"
+            android:gravity="fill"/>
+    </item>
+    <!-- Centered padded tasbeeh icon — not stretched, not cropped -->
+    <item>
+        <bitmap
+            android:src="@drawable/native_splash_icon"
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:tileMode="disabled"/>
+    </item>
 </layer-list>

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../models/dhikr.dart';
 import '../services/storage_service.dart';
+import '../utils/app_message.dart';
+import '../utils/dhikr_display.dart';
 
 class AddDhikrScreen extends StatefulWidget {
   final Dhikr? dhikr;
+  final int initialCount;
 
-  const AddDhikrScreen({super.key, this.dhikr});
+  const AddDhikrScreen({super.key, this.dhikr, this.initialCount = 0});
 
   @override
   State<AddDhikrScreen> createState() => _AddDhikrScreenState();
@@ -24,6 +29,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
   bool _hasTarget = true;
   int _currentCount = 0;
   bool _isEditing = false;
+  bool _isScanning = false;
 
   @override
   void initState() {
@@ -41,6 +47,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
         _targetController.text = widget.dhikr!.targetCount.toString();
       }
     } else {
+      _currentCount = widget.initialCount;
       _targetController.text = '33';
     }
   }
@@ -54,9 +61,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
 
   Future<void> _saveDhikr() async {
     if (_nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a dhikr name')),
-      );
+      showAppMessage(context, 'Please enter a dhikr name', isError: true);
       return;
     }
 
@@ -73,6 +78,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
     await _storage.saveDhikr(dhikr);
 
     if (mounted) {
+      // Pop back to the caller — the caller (counter_screen) shows the snackbar
       Navigator.pop(context, dhikr);
     }
   }
@@ -108,7 +114,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A2F2F),
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
@@ -189,41 +195,77 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
   }
 
   Widget _buildNameTextField() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-      decoration: BoxDecoration(
-        color: const Color(0xFF234141),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
-      ),
-      child: TextField(
-        controller: _nameController,
-        maxLines: 1,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
-        decoration: InputDecoration(
-          hintText: 'Dhikr name (e.g. SubhanAllah)',
-          hintStyle: TextStyle(
-            color: Colors.white.withOpacity(0.4),
-            fontSize: 16,
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: _nameController,
+      builder: (context, value, _) {
+        final arabic = isArabic(value.text);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFF234141),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
           ),
-          border: InputBorder.none,
-          suffixIcon: IconButton(
-            icon: Icon(
-              _isListening ? Icons.mic : Icons.mic_none,
-              color: _isListening ? const Color(0xFF4ADE80) : Colors.white.withOpacity(0.5),
+          child: TextField(
+            controller: _nameController,
+            maxLines: 1,
+            textDirection: arabic ? TextDirection.rtl : TextDirection.ltr,
+            textAlign: arabic ? TextAlign.right : TextAlign.left,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: arabic ? 24 : 16,
+              fontFamily: arabic ? 'Amiri' : null,
+              height: arabic ? 1.4 : null,
             ),
-            onPressed: _toggleListening,
+            decoration: InputDecoration(
+              hintText: 'Dhikr name (e.g. SubhanAllah)',
+              hintStyle: TextStyle(
+                color: Colors.white.withOpacity(0.4),
+                fontSize: 16,
+              ),
+              border: InputBorder.none,
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      _isListening ? Icons.mic : Icons.mic_none,
+                      color: _isListening
+                          ? const Color(0xFF4ADE80)
+                          : Colors.white.withOpacity(0.5),
+                    ),
+                    onPressed: _toggleListening,
+                    tooltip: 'Voice input',
+                  ),
+                  IconButton(
+                    icon: _isScanning
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white.withOpacity(0.5),
+                            ),
+                          )
+                        : Icon(
+                            Icons.camera_alt_outlined,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                    onPressed: _isScanning ? null : _scanArabicText,
+                    tooltip: 'Scan Arabic text',
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   void _toggleListening() async {
     if (!_speechToText.isAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Speech-to-text not available')),
-      );
+      showAppMessage(context, 'Speech-to-text not available', isError: true);
       return;
     }
 
@@ -257,6 +299,64 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
       setState(() {
         _isListening = false;
       });
+    }
+  }
+
+  Future<void> _scanArabicText() async {
+    if (_isScanning) return;
+    setState(() => _isScanning = true);
+
+    try {
+      final picker = ImagePicker();
+      final pickedImage = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 100,
+        preferredCameraDevice: CameraDevice.rear,
+      );
+
+      if (pickedImage == null) {
+        setState(() => _isScanning = false);
+        return;
+      }
+
+      final inputImage = InputImage.fromFilePath(pickedImage.path);
+      final textRecognizer = TextRecognizer();
+
+      try {
+        final RecognizedText recognizedText =
+            await textRecognizer.processImage(inputImage);
+
+        final scannedText = recognizedText.text.trim();
+        debugPrint('OCR RAW TEXT: $scannedText');
+
+        if (scannedText.isNotEmpty) {
+          setState(() {
+            _nameController.text = scannedText;
+            _nameController.selection = TextSelection.fromPosition(
+              TextPosition(offset: scannedText.length),
+            );
+          });
+        } else {
+          if (mounted) {
+            showAppMessage(
+              context,
+              'No text detected. Try better lighting and focus.',
+              isError: true,
+            );
+          }
+        }
+      } finally {
+        await textRecognizer.close();
+      }
+    } catch (e) {
+      if (mounted) {
+        final message = e.toString().toLowerCase().contains('permission')
+            ? 'Camera permission required'
+            : 'Failed to scan text';
+        showAppMessage(context, message, isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
     }
   }
 
@@ -397,7 +497,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A2F2F),
+                color: const Color(0xFF071A17),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(

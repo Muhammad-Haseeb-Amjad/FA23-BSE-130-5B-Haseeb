@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'screens/splash_screen.dart';
 import 'screens/counter_screen.dart';
+import 'widgets/premium_app_background.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,7 +12,7 @@ void main() {
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Color(0xFF1A2F2F),
+      systemNavigationBarColor: Color(0xFF071A17),
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
@@ -29,10 +31,12 @@ class DigitalTasbeehApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: const Color(0xFF4ADE80),
-        scaffoldBackgroundColor: const Color(0xFF1A2F2F),
+        scaffoldBackgroundColor: Colors.transparent,
         fontFamily: 'System',
       ),
-      home: const CounterScreen(),
+      // Wrap every route with the premium background (gradient + glow + pattern)
+      builder: (context, child) => PremiumAppBackground(child: child!),
+      home: const SplashScreen(),
     );
   }
 }

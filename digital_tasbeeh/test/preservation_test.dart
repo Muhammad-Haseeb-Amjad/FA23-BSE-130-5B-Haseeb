@@ -26,7 +26,13 @@ const double _saveReplayRadiusFactor = 0.066;
 
 Future<void> _pumpAppWithSize(WidgetTester tester, Size size) async {
   await tester.binding.setSurfaceSize(size);
-  await tester.pumpWidget(const DigitalTasbeehApp());
+  await tester.pumpWidget(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(brightness: Brightness.dark),
+      home: const CounterScreen(),
+    ),
+  );
   for (int i = 0; i < 200; i++) {
     await tester.pump(const Duration(milliseconds: 100));
     final menuReady = find.byIcon(Icons.menu).evaluate().isNotEmpty;

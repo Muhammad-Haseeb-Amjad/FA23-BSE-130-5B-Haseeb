@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/dhikr.dart';
 import '../services/storage_service.dart';
+import '../utils/app_message.dart';
+import '../utils/dhikr_display.dart';
 import 'add_dhikr_screen.dart';
 
 class MyDhikrsScreen extends StatefulWidget {
@@ -47,29 +49,57 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
     });
   }
 
-  Future<void> _deleteDhikr(String id) async {
+  Future<void> _deleteDhikr(String id, String name) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF234141),
+        title: const Text(
+          'Delete Dhikr?',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          'Are you sure you want to delete "$name"?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Color(0xFFFF6B6B))),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true) return;
     await _storage.deleteDhikr(id);
+    if (!mounted) return;
+    showAppMessage(context, '"$name" deleted successfully');
     _loadDhikrs();
   }
 
   void _navigateToAddDhikr() async {
-    final result = await Navigator.push(
+    final result = await Navigator.push<Dhikr?>(
       context,
       MaterialPageRoute(builder: (context) => const AddDhikrScreen()),
     );
 
-    if (result == true) {
+    if (result != null) {
       _loadDhikrs();
     }
   }
 
   void _navigateToEditDhikr(Dhikr dhikr) async {
-    final result = await Navigator.push(
+    final result = await Navigator.push<Dhikr?>(
       context,
       MaterialPageRoute(builder: (context) => AddDhikrScreen(dhikr: dhikr)),
     );
 
-    if (result == true) {
+    if (result != null) {
       _loadDhikrs();
     }
   }
@@ -87,10 +117,13 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
   String _getIconForDhikr(String name) {
     switch (name.toLowerCase()) {
       case 'subhanallah':
+      case 'سُبْحَانَ ٱللّٰهِ':
         return '🌿';
       case 'alhamdulillah':
+      case 'ٱلْحَمْدُ لِلّٰهِ':
         return '💚';
       case 'allahu akbar':
+      case 'ٱللّٰهُ أَكْبَرُ':
         return '⭐';
       case 'istighfar':
         return '💧';
@@ -104,7 +137,7 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A2F2F),
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
@@ -299,11 +332,14 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        dhikr.name,
-                        style: const TextStyle(
+                        getDhikrDisplayName(dhikr.name),
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: isArabic(getDhikrDisplayName(dhikr.name)) ? 26 : 22,
+                          fontFamily: isArabic(getDhikrDisplayName(dhikr.name)) ? 'Amiri' : null,
                           fontWeight: FontWeight.bold,
+                          height: 1.4,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -464,7 +500,7 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.white70),
-                  onPressed: () => _deleteDhikr(dhikr.id),
+                  onPressed: () => _deleteDhikr(dhikr.id, dhikr.name),
                 ),
               ],
             ),

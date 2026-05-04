@@ -4,6 +4,7 @@ import 'package:vibration/vibration.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../models/dhikr.dart';
 import '../services/storage_service.dart';
+import 'settings_screen.dart';
 
 class PrayerSequenceScreen extends StatefulWidget {
   const PrayerSequenceScreen({super.key});
@@ -143,7 +144,7 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFF1A2F2F),
+        backgroundColor: Colors.transparent,
         body: Center(
           child: CircularProgressIndicator(color: Color(0xFF4ADE80)),
         ),
@@ -152,7 +153,7 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
 
     if (_sequence.isEmpty) {
       return Scaffold(
-        backgroundColor: const Color(0xFF1A2F2F),
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -179,7 +180,7 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
         currentDhikr.currentCount / (currentDhikr.targetCount ?? 1);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A2F2F),
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
@@ -248,19 +249,23 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
               ),
               const Expanded(
                 child: Text(
-                  'PRAYER DHIKR SEQUENCE',
+                  'Prayer Dhikrs',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
+                    color: Colors.white,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 1,
                   ),
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.settings, color: Colors.white),
-                onPressed: () {},
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SettingsScreen(),
+                  ),
+                ),
               ),
             ],
           ),
@@ -277,7 +282,7 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
               ),
               const Spacer(),
               Text(
-                '${(progress * 100).toInt()}% Completed',
+                '${(progress * 100).round()}% Completed',
                 style: const TextStyle(
                   color: Color(0xFF4ADE80),
                   fontSize: 14,
@@ -287,23 +292,14 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          Row(
-            children: List.generate(_sequence.length, (index) {
-              return Expanded(
-                child: Container(
-                  height: 4,
-                  margin: EdgeInsets.only(
-                    right: index < _sequence.length - 1 ? 5 : 0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _sequence[index].isCompleted
-                        ? const Color(0xFF4ADE80)
-                        : Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              );
-            }),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 6,
+              backgroundColor: Colors.white.withOpacity(0.2),
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4ADE80)),
+            ),
           ),
         ],
       ),
