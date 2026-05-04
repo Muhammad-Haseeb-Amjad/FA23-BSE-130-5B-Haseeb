@@ -185,7 +185,14 @@ class GlobalFunction extends Model
         $fileNameDO = str_replace($baseURLDO, '', $fileNameAWS);
         $fileNameLocal = str_replace($baseURLLocal, '', $url);
 
+        $publicUploadsPath = base_path('../public_html/storage/' . $fileNameLocal);
+
         // Check and delete the file from local storage
+        if (file_exists($publicUploadsPath)) {
+            unlink($publicUploadsPath);
+            return;
+        }
+
         if (Storage::disk('local')->exists('public/' . $fileNameLocal)) {
             Storage::disk('local')->delete('public/' . $fileNameLocal);
             return;
@@ -209,23 +216,21 @@ class GlobalFunction extends Model
 
     public static function saveFileAndGivePath($file)
     {
-        $storageType = Setting::first()->storage_type;
+        if ($file == null) {
+            return null;
+        }
 
-        $storageConfig = [
-            1 => ['disk' => 's3', 'base_url' => env('ITEM_BASE_URL')],
-            2 => ['disk' => 'digitalocean', 'base_url' => env('DO_SPACE_URL')],
-        ];
+        $destinationPath = base_path('../public_html/storage/uploads');
 
-        $storageDisk = $storageConfig[$storageType]['disk'] ?? 'public';
-        $baseUrl = $storageConfig[$storageType]['base_url'] ?? rtrim(env('APP_URL'), '/') . '/storage/';
+        if (!file_exists($destinationPath)) {
+            mkdir($destinationPath, 0775, true);
+        }
 
         $fileName = time() . '_' . env('APP_NAME') . '_' . str_replace(" ", "_", $file->getClientOriginalName());
-        $appName = env('APP_NAME') ? env('APP_NAME') . '/' : '';
-        $filePath = ($storageDisk === 'public') ? 'uploads/' . $fileName : $appName . 'uploads/' . $fileName;
 
-        Storage::disk($storageDisk)->put($filePath, file_get_contents($file), 'public');
+        $file->move($destinationPath, $fileName);
 
-        return $baseUrl . $filePath;
+        return url('storage/uploads/' . $fileName);
     }
 
     public static function saveFileInLocal($file, $filename)

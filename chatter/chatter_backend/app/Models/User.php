@@ -23,6 +23,41 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'identity',
+        'username',
+        'full_name',
+        'bio',
+        'interest_ids',
+        'profile',
+        'background_image',
+        'is_push_notifications',
+        'is_invited_to_room',
+        'is_verified',
+        'is_block',
+        'block_user_ids',
+        'saved_music_ids',
+        'saved_reel_ids',
+        'following',
+        'followers',
+        'is_moderator',
+        'login_type',
+        'device_type',
+        'device_token',
+        'role_type',
+        'approval_status',
+        'registration_number',
+        'department',
+        'batch_duration',
+        'phone_number',
+        'gender',
+        'campus',
+        'phone_verified_at',
+        'otp_code',
+        'otp_expires_at',
+        'approved_at',
+        'approved_by',
+        'rejected_reason',
+        'email_verified_or_approval_sent_at',
     ];
 
     /**
@@ -33,6 +68,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'otp_code',
     ];
 
     /**
@@ -42,6 +78,10 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'phone_verified_at' => 'datetime',
+        'otp_expires_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'email_verified_or_approval_sent_at' => 'datetime',
     ];
 
     public function post()

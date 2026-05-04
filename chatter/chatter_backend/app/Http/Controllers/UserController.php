@@ -21,11 +21,78 @@ use App\Models\Story;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
+    private function approvalBlockedResponse(?User $user)
+    {
+        if (!$user) {
+            return null;
+        }
+
+        if ($user->approval_status === 'pending') {
+            return response()->json(['status' => false, 'message' => 'Your account is pending admin approval.']);
+        }
+
+        if ($user->approval_status === 'rejected') {
+            return response()->json(['status' => false, 'message' => 'Your registration request was rejected.']);
+        }
+
+        if ($user->approval_status === 'cancelled') {
+            return response()->json(['status' => false, 'message' => 'Your registration request was cancelled.']);
+        }
+
+        return null;
+    }
+
+    private function profilePayload(User $user, bool $includePrivate = false): array
+    {
+        $payload = [
+            'id' => $user->id,
+            'identity' => $user->identity,
+            'username' => $user->username,
+            'full_name' => $user->full_name,
+            'email' => $user->email ?? $user->identity,
+            'bio' => $user->bio,
+            'interest_ids' => $user->interest_ids,
+            'profile' => $user->profile,
+            'background_image' => $user->background_image,
+            'is_push_notifications' => $user->is_push_notifications,
+            'is_invited_to_room' => $user->is_invited_to_room,
+            'is_verified' => $user->is_verified,
+            'is_block' => $user->is_block,
+            'block_user_ids' => $user->block_user_ids,
+            'following' => $user->following,
+            'followers' => $user->followers,
+            'login_type' => $user->login_type,
+            'device_type' => $user->device_type,
+            'device_token' => $user->device_token,
+            'role_type' => $user->role_type,
+            'approval_status' => $user->approval_status ?? 'approved',
+            'registration_number' => $user->registration_number,
+            'department' => $user->department,
+            'batch_duration' => $user->batch_duration,
+            'campus' => $user->campus ?: 'COMSATS University Islamabad',
+            'phone_verified_at' => $user->phone_verified_at,
+            'approved_at' => $user->approved_at,
+            'approved_by' => $user->approved_by,
+            'rejected_reason' => $user->rejected_reason,
+            'email_verified_or_approval_sent_at' => $user->email_verified_or_approval_sent_at,
+            'created_at' => $user->created_at,
+            'updated_at' => $user->updated_at,
+        ];
+
+        if ($includePrivate) {
+            $payload['phone_number'] = $user->phone_number;
+            $payload['gender'] = $user->gender;
+        }
+
+        return $payload;
+    }
+
     public function users()
     {
         return view('users');
@@ -40,7 +107,11 @@ class UserController extends Controller
 
         $columns = [
             0 => 'id',
-            1 => 'image',
+            1 => 'full_name',
+            2 => 'role_type',
+            3 => 'department',
+            4 => 'approval_status',
+            5 => 'image',
         ];
 
         $limit = $request->input('length');
@@ -65,6 +136,9 @@ class UserController extends Controller
         }
         $data = [];
         foreach ($result as $item) {
+            $role = $item->role_type ? ucfirst($item->role_type) : '-';
+            $status = $item->approval_status ? ucfirst($item->approval_status) : 'Approved';
+            $registrationNumber = $item->role_type === 'student' ? ($item->registration_number ?: '-') : '-';
              
             if ($item->is_verified == 2 || $item->is_verified == 3) {
                 $is_verified = '<img src="asset/image/verified.svg" class="verified_icon_top">';
@@ -103,9 +177,13 @@ class UserController extends Controller
             $data[] = [
                 $image,
                 $username,
-                $item->username,
-                $device_type,
-                $moderator,
+                $role,
+                $item->department ?: '-',
+                $registrationNumber,
+                $status,
+                $item->phone_number ?: '-',
+                $item->gender ? ucfirst($item->gender) : '-',
+                $item->campus ?: '-',
                 $action
             ];
         }
@@ -633,27 +711,41 @@ class UserController extends Controller
         $user = User::where('identity', $request->identity)->first();
 
         if ($user) {
+            $blocked = $this->approvalBlockedResponse($user);
+            if ($blocked) {
+                return $blocked;
+            }
+
             $user->device_type = (int) $request->device_type;
             $user->device_token = $request->device_token;
+            if (empty($user->approval_status)) {
+                $user->approval_status = 'approved';
+            }
             $user->save();
             return response()->json([
-                'status' => false,
-                'message' => 'User is already exist',
-                'data' => $user,
+                'status' => true,
+                'message' => 'Login Successfully.',
+                'data' => $this->profilePayload($user, true),
             ]);
         } else {
             $user = new User();
             $user->identity = $request->identity;
+            $user->email = $request->identity;
             $user->full_name = $request->full_name;
             $user->login_type = (int) $request->login_type;
             $user->device_type = (int) $request->device_type;
             $user->device_token = $request->device_token;
+            $user->approval_status = 'approved';
+            $user->role_type = $request->role_type ?? null;
+            $user->department = $request->department ?? null;
+            $user->phone_number = $request->phone_number ?? null;
+            $user->gender = $request->gender ?? null;
             $user->save();
             $user = User::where('id', $user->id)->first();
             return response()->json([
                 'status' => true,
-                'message' => 'User Added succesfully',
-                'data' => $user,
+                'message' => 'Login Successfully.',
+                'data' => $this->profilePayload($user, true),
             ]);
         }
     }
@@ -819,7 +911,10 @@ class UserController extends Controller
                                             ->offset($request->start)
                                             ->limit($request->limit)
                                             ->get()
-                                            ->pluck('user');
+                                            ->pluck('user')
+                                            ->map(function ($item) {
+                                                return $this->profilePayload($item, false);
+                                            });
 
         return response()->json([
             'status' => true,
@@ -863,6 +958,9 @@ class UserController extends Controller
         }
 
         $fetchFollowersList = $query->get()->pluck('followerUser')->filter()->values();
+        $fetchFollowersList = $fetchFollowersList->map(function ($item) {
+            return $this->profilePayload($item, false);
+        });
 
         return response()->json([
             'status' => true,
@@ -997,7 +1095,7 @@ class UserController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Random profile found',
-            'data' => $randomUser,
+            'data' => $randomUser ? $this->profilePayload($randomUser, false) : null,
         ]);    
     }
 
@@ -1256,6 +1354,12 @@ class UserController extends Controller
             $interest = Interest::whereIn('id', explode(',', $profile->interest_ids))->get();
             $profile->interest = $interest;
 
+            $includePrivate = (int) $request->my_user_id === (int) $request->user_id;
+            $payload = $this->profilePayload($profile, $includePrivate);
+            $payload['followingStatus'] = $profile->followingStatus;
+            $payload['stories'] = $stories;
+            $payload['interest'] = $interest;
+
             // $blockUserIds = User::where('is_block', 1)->get()->pluck('id');
             $blockUserIds = explode(',', $profile->block_user_ids);
 
@@ -1287,7 +1391,7 @@ class UserController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Getting profile successfully',
-                'data' => $profile,
+                'data' => $payload,
             ]);
 
         }
@@ -1448,6 +1552,10 @@ class UserController extends Controller
                     ->orderByDesc('id')
                     ->get();
 
+        $users = $users->map(function ($item) {
+            return $this->profilePayload($item, false);
+        });
+
         return response()->json([
             'status' => true,
             'message' => 'User profile',
@@ -1472,7 +1580,9 @@ class UserController extends Controller
         if($user) {
             $blockUserIds = explode(',', $user->block_user_ids);
 
-            $blockedUser = User::whereIn('id', $blockUserIds)->get();
+            $blockedUser = User::whereIn('id', $blockUserIds)->get()->map(function ($item) {
+                return $this->profilePayload($item, true);
+            });
             return response()->json([
                 'status' => true,
                 'message' => 'Fetch blocked user list successfully',

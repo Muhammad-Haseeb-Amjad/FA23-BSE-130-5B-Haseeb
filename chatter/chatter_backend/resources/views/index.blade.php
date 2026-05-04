@@ -56,6 +56,42 @@
         </div>
         <div class="dashboard-blog">
             <div class="dashboard-blog-content-top">
+                <p>{{ $pendingRegistrationRequests }}</p>
+                <div class="card-icon">
+                    <i data-feather="clock"></i>
+                </div>
+            </div>
+            <div class="dashboard-blog-content">
+                <h5 class="fw-normal">Pending Requests</h5>
+                <a href="{{ route('registrationRequests') }}">{{ __('viewMore') }}</a>
+            </div>
+        </div>
+        <div class="dashboard-blog">
+            <div class="dashboard-blog-content-top">
+                <p>{{ $approvedStudents }}</p>
+                <div class="card-icon">
+                    <i data-feather="user-check"></i>
+                </div>
+            </div>
+            <div class="dashboard-blog-content">
+                <h5 class="fw-normal">Approved Students</h5>
+                <a href="{{ route('registrationRequests') }}">{{ __('viewMore') }}</a>
+            </div>
+        </div>
+        <div class="dashboard-blog">
+            <div class="dashboard-blog-content-top">
+                <p>{{ $approvedFaculty }}</p>
+                <div class="card-icon">
+                    <i data-feather="users"></i>
+                </div>
+            </div>
+            <div class="dashboard-blog-content">
+                <h5 class="fw-normal">Approved Faculty</h5>
+                <a href="{{ route('registrationRequests') }}">{{ __('viewMore') }}</a>
+            </div>
+        </div>
+        <div class="dashboard-blog">
+            <div class="dashboard-blog-content-top">
                 <p> {{ $posts }} </p>
                 <div class="card-icon">
                     <i data-feather="image"></i>

@@ -172,6 +172,13 @@ class SettingsController extends Controller
         $faqs = FAQs::count();
         $reels = Reel::count();
         $music = Music::count();
+        $pendingRegistrationRequests = User::where('approval_status', 'pending')->count();
+        $approvedStudents = User::where(function ($query) {
+            $query->where('approval_status', 'approved')->orWhereNull('approval_status');
+        })->where('role_type', 'student')->count();
+        $approvedFaculty = User::where(function ($query) {
+            $query->where('approval_status', 'approved')->orWhereNull('approval_status');
+        })->where('role_type', 'faculty')->count();
 
         return view('index', [
             'user' => $user,
@@ -184,6 +191,9 @@ class SettingsController extends Controller
             'faqs' => $faqs,
             'reels' => $reels,
             'music' => $music,
+            'pendingRegistrationRequests' => $pendingRegistrationRequests,
+            'approvedStudents' => $approvedStudents,
+            'approvedFaculty' => $approvedFaculty,
         ]);
     }
 

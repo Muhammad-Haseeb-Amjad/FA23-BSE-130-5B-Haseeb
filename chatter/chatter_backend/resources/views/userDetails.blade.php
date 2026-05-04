@@ -142,6 +142,54 @@
                                 </div>
                                 <div class="col-lg-6 col-md-12">
                                     <div class="form-group">
+                                        <label> Role Type</label>
+                                        <input type="text" class="form-control" value="{{ ucfirst($user->role_type ?? '-') }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12">
+                                    <div class="form-group">
+                                        <label> Approval Status</label>
+                                        <input type="text" class="form-control" value="{{ ucfirst($user->approval_status ?? 'approved') }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12">
+                                    <div class="form-group">
+                                        <label> Department</label>
+                                        <input type="text" class="form-control" value="{{ $user->department ?? '-' }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12">
+                                    <div class="form-group">
+                                        <label> Registration Number</label>
+                                        <input type="text" class="form-control" value="{{ $user->registration_number ?? '-' }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12">
+                                    <div class="form-group">
+                                        <label> Batch Duration</label>
+                                        <input type="text" class="form-control" value="{{ $user->batch_duration ?? '-' }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12">
+                                    <div class="form-group">
+                                        <label> Campus</label>
+                                        <input type="text" class="form-control" value="{{ $user->campus ?? 'COMSATS University Islamabad' }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12">
+                                    <div class="form-group">
+                                        <label> Phone Number</label>
+                                        <input type="text" class="form-control" value="{{ $user->phone_number ?? '-' }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12">
+                                    <div class="form-group">
+                                        <label> Gender</label>
+                                        <input type="text" class="form-control" value="{{ ucfirst($user->gender ?? '-') }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-md-12">
+                                    <div class="form-group">
                                         <label> {{ __('bio') }}</label>
                                         <input type="text" name="bio" class="form-control" value="{{ $user->bio }}">
                                     </div>
@@ -169,6 +217,8 @@
                                                 @else
                                                 <li>{{ __('deviceType') }} : iOS </li>
                                                 @endif
+
+                                                <li>Registration Status : {{ ucfirst($user->approval_status ?? 'approved') }}</li>
                                             </ul>
                                         </div>
 
