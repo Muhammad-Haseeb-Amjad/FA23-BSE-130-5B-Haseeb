@@ -7,6 +7,9 @@ class WebService {
   static const String fetchPlatformNotification = "${apiURL}fetchPlatformNotification";
   static const String fetchUserNotification = "${apiURL}fetchUserNotification";
   static const String fetchFAQs = "${apiURL}fetchFAQs";
+  static const String sendRegisterOtp = "${apiURL}sendRegisterOtp";
+  static const String verifyRegisterOtp = "${apiURL}verifyRegisterOtp";
+  static const String register = "${apiURL}register";
 
   static const String fetchPosts = "${apiURL}fetchPosts";
   static const String likePost = "${apiURL}likePost";
