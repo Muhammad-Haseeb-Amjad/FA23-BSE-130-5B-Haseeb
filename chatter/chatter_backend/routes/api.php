@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\FAQsController;
 use App\Http\Controllers\InterestController;
+use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileVerificationController;
 use App\Http\Controllers\ReelController;
@@ -24,6 +25,9 @@ use Illuminate\Support\Facades\Route;
 
 // Route::post('fetchUserList', [UserController::class, 'fetchUserList'])->middleware('checkHeader');
 Route::post('addUser', [UserController::class, 'addUser'])->middleware('checkHeader');
+Route::post('sendRegisterOtp', [RegistrationController::class, 'sendRegisterOtp'])->middleware('checkHeader');
+Route::post('verifyRegisterOtp', [RegistrationController::class, 'verifyRegisterOtp'])->middleware('checkHeader');
+Route::post('register', [RegistrationController::class, 'register'])->middleware('checkHeader');
 Route::post('editProfile', [UserController::class, 'editProfile'])->middleware('checkHeader');
 Route::post('followUser', [UserController::class, 'followUser'])->middleware('checkHeader');
 Route::post('fetchFollowingList', [UserController::class, 'fetchFollowingList'])->middleware('checkHeader');

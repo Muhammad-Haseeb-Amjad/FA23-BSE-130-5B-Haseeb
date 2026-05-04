@@ -7,6 +7,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileVerificationController;
+use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ReelController;
 use App\Http\Controllers\RestrictionController;
 use App\Http\Controllers\RoomController;
@@ -181,6 +182,13 @@ Route::post('updateModeratorStatus', [UserController::class, 'updateModeratorSta
 Route::post('deleteAvatarFromUserDetail', [UserController::class, 'deleteAvatarFromUserDetail'])->middleware(['checkLogin'])->name('deleteAvatarFromUserDetail');
 Route::post('deleteProfileFromUserDetail', [UserController::class, 'deleteProfileFromUserDetail'])->middleware(['checkLogin'])->name('deleteProfileFromUserDetail');
 Route::post('moderatorsList', [UserController::class, 'moderatorsList'])->middleware(['checkLogin'])->name('moderatorsList');
+
+Route::get('registrationRequests', [RegistrationController::class, 'registrationRequests'])->middleware(['checkLogin'])->name('registrationRequests');
+Route::post('registrationRequestList', [RegistrationController::class, 'registrationRequestList'])->middleware(['checkLogin'])->name('registrationRequestList');
+Route::get('registrationRequestDetail/{id}', [RegistrationController::class, 'registrationRequestDetail'])->middleware(['checkLogin'])->name('registrationRequestDetail');
+Route::post('approveRegistrationRequest/{id}', [RegistrationController::class, 'approveRegistrationRequest'])->middleware(['checkLogin'])->name('approveRegistrationRequest');
+Route::post('rejectRegistrationRequest/{id}', [RegistrationController::class, 'rejectRegistrationRequest'])->middleware(['checkLogin'])->name('rejectRegistrationRequest');
+Route::post('cancelRegistrationRequest/{id}', [RegistrationController::class, 'cancelRegistrationRequest'])->middleware(['checkLogin'])->name('cancelRegistrationRequest');
 
 Route::get('faqs', [FAQsController::class, 'faqs'])->middleware(['checkLogin'])->name('faqs');
 Route::post('faqsList', [FAQsController::class, 'faqsList'])->middleware(['checkLogin'])->name('faqsList');

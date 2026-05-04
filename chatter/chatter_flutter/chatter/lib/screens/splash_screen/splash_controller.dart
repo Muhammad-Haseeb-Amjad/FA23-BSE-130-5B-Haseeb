@@ -26,6 +26,10 @@ class SplashController extends BaseController {
           SessionManager.shared.setUser(user);
           completion();
         },
+        onError: () {
+          // Profile fetch failed (no network, etc.) — proceed with cached user data.
+          completion();
+        },
       );
     } else {
       completion();
@@ -40,16 +44,19 @@ class SplashController extends BaseController {
     });
   }
 
+  /// Returns true if the value is non-null and non-empty.
+  bool _hasValue(String? value) => value != null && value.trim().isNotEmpty;
+
   Widget gotoView() {
     if (SessionManager.shared.isLogin()) {
       var user = SessionManager.shared.getUser();
       if (user?.isBlock == 1) {
         return const BlockedByAdminScreen();
-      } else if (user?.interestIds == null) {
+      } else if (!_hasValue(user?.interestIds)) {
         return InterestScreen();
-      } else if (user?.username == null) {
+      } else if (!_hasValue(user?.username)) {
         return const UserNameScreen();
-      } else if (user?.profile == null) {
+      } else if (!_hasValue(user?.profile)) {
         return const ProfilePictureScreen();
       } else {
         return TabBarScreen();

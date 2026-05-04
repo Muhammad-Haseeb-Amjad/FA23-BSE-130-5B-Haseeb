@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:untitled/common/api_service/api_service.dart';
 import 'package:untitled/common/controller/base_controller.dart';
+import 'package:untitled/common/managers/logger.dart';
 import 'package:untitled/common/managers/session_manager.dart';
 import 'package:untitled/localization/languages.dart';
 import 'package:untitled/models/common_response.dart';
@@ -215,7 +216,7 @@ class UserService {
     );
   }
 
-  void fetchMyProfile({required num userID, int? myUserId, required Function(User user) completion}) {
+  void fetchMyProfile({required num userID, int? myUserId, required Function(User user) completion, Function()? onError}) {
     var param = {Param.myUserId: myUserId ?? SessionManager.shared.getUserID(), Param.userId: userID.toString()};
 
     ApiService.shared.call(
@@ -225,9 +226,16 @@ class UserService {
         var user = Registration.fromJson(p0).data;
         if (user != null) {
           completion(user);
+        } else {
+          // Backend returned success but no user data — fall back gracefully.
+          onError?.call();
         }
       },
-    );
+    ).catchError((error) {
+      // Network or server error — fall back to cached user data.
+      Loggers.error('fetchMyProfile failed (using cached user): $error');
+      onError?.call();
+    });
   }
 
   void fetchRandomProfile(Function(User user) completion) {
@@ -270,6 +278,76 @@ class UserService {
         }
       },
     );
+  }
+
+  Future<CommonResponse> sendRegisterOtp(String phoneNumber) async {
+    late CommonResponse result;
+    await ApiService.shared.call(
+      url: WebService.sendRegisterOtp,
+      param: {Param.phoneNumber: phoneNumber},
+      completion: (response) {
+        result = CommonResponse.fromJson(response);
+      },
+    );
+    return result;
+  }
+
+  Future<CommonResponse> verifyRegisterOtp(String phoneNumber, String otp) async {
+    late CommonResponse result;
+    await ApiService.shared.call(
+      url: WebService.verifyRegisterOtp,
+      param: {Param.phoneNumber: phoneNumber, Param.otp: otp},
+      completion: (response) {
+        result = CommonResponse.fromJson(response);
+      },
+    );
+    return result;
+  }
+
+  Future<Registration> registerCuiUser({
+    required String roleType,
+    required String fullName,
+    required String email,
+    required String phoneNumber,
+    required String department,
+    required String gender,
+    required String password,
+    required String passwordConfirmation,
+    String? registrationNumber,
+    String? batchDuration,
+    String? campus,
+  }) async {
+    late Registration result;
+    final param = <String, String>{
+      Param.roleType: roleType,
+      Param.fullName: fullName,
+      Param.email: email,
+      Param.phoneNumber: phoneNumber,
+      Param.department: department,
+      Param.gender: gender,
+      Param.password: password,
+      Param.passwordConfirmation: passwordConfirmation,
+      Param.campus: campus ?? 'COMSATS University Islamabad',
+      Param.deviceType: (GetPlatform.isIOS ? 1 : 0).toString(),
+      Param.deviceToken: 'deviceToken',
+    };
+
+    if (registrationNumber != null && registrationNumber.isNotEmpty) {
+      param[Param.registrationNumber] = registrationNumber;
+    }
+    if (batchDuration != null && batchDuration.isNotEmpty) {
+      param[Param.batchDuration] = batchDuration;
+    }
+
+    await ApiService.shared.call(
+      url: WebService.register,
+      param: param,
+      completion: (response) {
+        result = Registration.fromJson(response);
+      },
+    );
+
+    return result;
   }
 
   void checkForUsername(String username, Function(bool) completion) {
@@ -373,11 +451,7 @@ class UserService {
       param: map,
       completion: (p0) {
         var registration = Registration.fromJson(p0);
-        var user = registration.data;
-        if (user != null) {
-          SessionManager.shared.setUser(user);
-          completion(registration);
-        }
+        completion(registration);
       },
     );
   }

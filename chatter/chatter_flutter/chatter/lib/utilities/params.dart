@@ -1,6 +1,17 @@
 class Param {
   static const identity = "identity";
+  static const email = "email";
   static const fullName = "full_name";
+  static const roleType = "role_type";
+  static const registrationNumber = "registration_number";
+  static const department = "department";
+  static const batchDuration = "batch_duration";
+  static const phoneNumber = "phone_number";
+  static const gender = "gender";
+  static const campus = "campus";
+  static const password = "password";
+  static const passwordConfirmation = "password_confirmation";
+  static const otp = "otp";
   static const loginType = "login_type";
   static const deviceType = "device_type";
   static const deviceToken = "device_token";

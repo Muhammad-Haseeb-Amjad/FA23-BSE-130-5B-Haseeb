@@ -5,7 +5,7 @@ const String appName = "Chatter";
 // Keep the trailing slash so paths resolve correctly (avoids "invalid port" errors).
 // For Android physical device on same LAN: use your machine IP (10.203.17.216:8888)
 // Server command: php artisan serve --host=0.0.0.0 --port=8888
-const String baseURL = "http://10.203.17.216:8888/";
+const String baseURL = "https://cuichat.online/";
 // Base URL for serving media files (images/videos). Use the same host/port as backend, accessible from device.
 const String itemBaseURL = baseURL;
 const String apiURL = "${baseURL}api/";

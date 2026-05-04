@@ -30,6 +30,7 @@ class User {
   User({
     this.id,
     this.identity,
+    this.email,
     this.username,
     this.fullName,
     this.bio,
@@ -45,18 +46,34 @@ class User {
     this.followers,
     this.loginType,
     this.deviceType,
+    this.isModerator,
+    this.roleType,
+    this.approvalStatus,
+    this.registrationNumber,
+    this.department,
+    this.batchDuration,
+    this.phoneNumber,
+    this.gender,
+    this.campus,
+    this.phoneVerifiedAt,
+    this.approvedAt,
+    this.approvedBy,
+    this.rejectedReason,
+    this.emailVerifiedOrApprovalSentAt,
+    this.savedMusicIds,
+    this.savedReelIds,
     this.deviceToken,
     this.createdAt,
     this.updatedAt,
     this.followingStatus,
     this.stories,
     this.interest,
-    this.savedMusicIds,
   });
 
   User.fromJson(dynamic json) {
     id = json['id'];
     identity = json['identity'];
+    email = json['email'];
     username = json['username'];
     fullName = json['full_name'];
     bio = json['bio'];
@@ -74,6 +91,19 @@ class User {
     deviceType = json['device_type'];
     deviceToken = json['device_token'];
     isModerator = json['is_moderator'];
+    roleType = json['role_type'];
+    approvalStatus = json['approval_status'];
+    registrationNumber = json['registration_number'];
+    department = json['department'];
+    batchDuration = json['batch_duration'];
+    phoneNumber = json['phone_number'];
+    gender = json['gender'];
+    campus = json['campus'];
+    phoneVerifiedAt = json['phone_verified_at'];
+    approvedAt = json['approved_at'];
+    approvedBy = json['approved_by'];
+    rejectedReason = json['rejected_reason'];
+    emailVerifiedOrApprovalSentAt = json['email_verified_or_approval_sent_at'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     followingStatus = json['followingStatus'];
@@ -99,6 +129,7 @@ class User {
 
   num? id;
   String? identity;
+  String? email;
   String? username;
   String? fullName;
   String? bio;
@@ -115,6 +146,19 @@ class User {
   num? loginType;
   num? deviceType;
   num? isModerator;
+  String? roleType;
+  String? approvalStatus;
+  String? registrationNumber;
+  String? department;
+  String? batchDuration;
+  String? phoneNumber;
+  String? gender;
+  String? campus;
+  String? phoneVerifiedAt;
+  String? approvedAt;
+  num? approvedBy;
+  String? rejectedReason;
+  String? emailVerifiedOrApprovalSentAt;
   String? savedMusicIds;
   String? savedReelIds;
   String? deviceToken;
@@ -129,6 +173,7 @@ class User {
     final map = <String, dynamic>{};
     map['id'] = id;
     map['identity'] = identity;
+    map['email'] = email;
     map['username'] = username;
     map['full_name'] = fullName;
     map['bio'] = bio;
@@ -145,10 +190,23 @@ class User {
     map['login_type'] = loginType;
     map['device_type'] = deviceType;
     map['device_token'] = deviceToken;
+    map['is_moderator'] = isModerator;
+    map['role_type'] = roleType;
+    map['approval_status'] = approvalStatus;
+    map['registration_number'] = registrationNumber;
+    map['department'] = department;
+    map['batch_duration'] = batchDuration;
+    map['phone_number'] = phoneNumber;
+    map['gender'] = gender;
+    map['campus'] = campus;
+    map['phone_verified_at'] = phoneVerifiedAt;
+    map['approved_at'] = approvedAt;
+    map['approved_by'] = approvedBy;
+    map['rejected_reason'] = rejectedReason;
+    map['email_verified_or_approval_sent_at'] = emailVerifiedOrApprovalSentAt;
     map['created_at'] = createdAt;
     map['updated_at'] = updatedAt;
     map['followingStatus'] = followingStatus;
-    map['is_moderator'] = isModerator;
     map['saved_music_ids'] = savedMusicIds;
     map['saved_reel_ids'] = savedReelIds;
     if (stories != null) {
@@ -158,6 +216,210 @@ class User {
       map['interest'] = interest?.map((v) => v.toJson()).toList();
     }
     return map;
+  }
+
+  /// Map-style accessor for backward compatibility: user['id'], user['username']
+  dynamic operator [](String key) {
+    final map = toJson();
+    if (map.containsKey(key)) {
+      return map[key];
+    }
+    switch (key) {
+      case 'fullName':
+        return fullName;
+      case 'backgroundImage':
+        return backgroundImage;
+      case 'isPushNotifications':
+        return isPushNotifications;
+      case 'isInvitedToRoom':
+        return isInvitedToRoom;
+      case 'isVerified':
+        return isVerified;
+      case 'isBlock':
+        return isBlock;
+      case 'blockUserIds':
+        return blockUserIds;
+      case 'savedMusicIds':
+        return savedMusicIds;
+      case 'savedReelIds':
+        return savedReelIds;
+      case 'deviceToken':
+        return deviceToken;
+      case 'createdAt':
+        return createdAt;
+      case 'updatedAt':
+        return updatedAt;
+      case 'followingStatus':
+        return followingStatus;
+      case 'isModerator':
+        return isModerator;
+      case 'email':
+        return email;
+      case 'roleType':
+        return roleType;
+      case 'approvalStatus':
+        return approvalStatus;
+      case 'registrationNumber':
+        return registrationNumber;
+      case 'department':
+        return department;
+      case 'batchDuration':
+        return batchDuration;
+      case 'phoneNumber':
+        return phoneNumber;
+      case 'gender':
+        return gender;
+      case 'campus':
+        return campus;
+      default:
+        return null;
+    }
+  }
+
+  /// Map-style setter for backward compatibility: user['id'] = value
+  void operator []=(String key, dynamic value) {
+    switch (key) {
+      case 'id':
+        id = value;
+        break;
+      case 'identity':
+        identity = value;
+        break;
+      case 'email':
+        email = value;
+        break;
+      case 'username':
+        username = value;
+        break;
+      case 'full_name':
+      case 'fullName':
+        fullName = value;
+        break;
+      case 'bio':
+        bio = value;
+        break;
+      case 'interest_ids':
+      case 'interestIds':
+        interestIds = value;
+        break;
+      case 'profile':
+        profile = value;
+        break;
+      case 'background_image':
+      case 'backgroundImage':
+        backgroundImage = value;
+        break;
+      case 'is_push_notifications':
+      case 'isPushNotifications':
+        isPushNotifications = value;
+        break;
+      case 'is_invited_to_room':
+      case 'isInvitedToRoom':
+        isInvitedToRoom = value;
+        break;
+      case 'is_verified':
+      case 'isVerified':
+        isVerified = value;
+        break;
+      case 'is_block':
+      case 'isBlock':
+        isBlock = value;
+        break;
+      case 'block_user_ids':
+      case 'blockUserIds':
+        blockUserIds = value;
+        break;
+      case 'following':
+        following = value;
+        break;
+      case 'followers':
+        followers = value;
+        break;
+      case 'login_type':
+      case 'loginType':
+        loginType = value;
+        break;
+      case 'device_type':
+      case 'deviceType':
+        deviceType = value;
+        break;
+      case 'device_token':
+      case 'deviceToken':
+        deviceToken = value;
+        break;
+      case 'role_type':
+      case 'roleType':
+        roleType = value;
+        break;
+      case 'approval_status':
+      case 'approvalStatus':
+        approvalStatus = value;
+        break;
+      case 'registration_number':
+      case 'registrationNumber':
+        registrationNumber = value;
+        break;
+      case 'department':
+        department = value;
+        break;
+      case 'batch_duration':
+      case 'batchDuration':
+        batchDuration = value;
+        break;
+      case 'phone_number':
+      case 'phoneNumber':
+        phoneNumber = value;
+        break;
+      case 'gender':
+        gender = value;
+        break;
+      case 'campus':
+        campus = value;
+        break;
+      case 'phone_verified_at':
+      case 'phoneVerifiedAt':
+        phoneVerifiedAt = value;
+        break;
+      case 'approved_at':
+      case 'approvedAt':
+        approvedAt = value;
+        break;
+      case 'approved_by':
+      case 'approvedBy':
+        approvedBy = value;
+        break;
+      case 'rejected_reason':
+      case 'rejectedReason':
+        rejectedReason = value;
+        break;
+      case 'email_verified_or_approval_sent_at':
+      case 'emailVerifiedOrApprovalSentAt':
+        emailVerifiedOrApprovalSentAt = value;
+        break;
+      case 'created_at':
+      case 'createdAt':
+        createdAt = value;
+        break;
+      case 'updated_at':
+      case 'updatedAt':
+        updatedAt = value;
+        break;
+      case 'followingStatus':
+        followingStatus = value;
+        break;
+      case 'is_moderator':
+      case 'isModerator':
+        isModerator = value;
+        break;
+      case 'saved_music_ids':
+      case 'savedMusicIds':
+        savedMusicIds = value;
+        break;
+      case 'saved_reel_ids':
+      case 'savedReelIds':
+        savedReelIds = value;
+        break;
+    }
   }
 
   String firebaseId() {

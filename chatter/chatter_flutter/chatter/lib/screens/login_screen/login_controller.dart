@@ -71,10 +71,31 @@ class LoginController extends BaseController {
           deviceToken: token,
           loginType: loginType,
           completion: (p0) {
+            var user = p0.data;
+            if (p0.status != true) {
+              stopLoading();
+              showSnackBar(p0.message ?? 'Unable to sign in', type: SnackBarType.error);
+              return;
+            }
+
+            final approvalStatus = (user?.approvalStatus ?? 'approved').toLowerCase();
+            if (approvalStatus != 'approved') {
+              stopLoading();
+              showSnackBar(
+                approvalStatus == 'pending'
+                    ? 'Your account is pending admin approval.'
+                    : approvalStatus == 'rejected'
+                        ? 'Your registration request was rejected.'
+                        : 'Your registration request was cancelled.',
+                type: SnackBarType.error,
+              );
+              return;
+            }
+
+            SessionManager.shared.setUser(user);
             SessionManager.shared.setLogin(true);
 
             Widget w = InterestScreen();
-            var user = p0.data;
             if (isPurchaseConfig) {
               Purchases.logIn('${user?.id ?? 0}');
             }
@@ -84,11 +105,11 @@ class LoginController extends BaseController {
             }
             if (user?.isBlock == 1) {
               w = const BlockedByAdminScreen();
-            } else if (user?.interestIds == null) {
+            } else if (!_hasValue(user?.interestIds)) {
               w = InterestScreen();
-            } else if (user?.username == null) {
+            } else if (!_hasValue(user?.username)) {
               w = const UserNameScreen();
-            } else if (user?.profile == null) {
+            } else if (!_hasValue(user?.profile)) {
               w = const ProfilePictureScreen();
             } else {
               w = TabBarScreen();
@@ -108,6 +129,9 @@ class LoginController extends BaseController {
           );
     });
   }
+
+  /// Returns true if the value is non-null and non-empty.
+  bool _hasValue(String? value) => value != null && value.trim().isNotEmpty;
 }
 
 enum LoginType {

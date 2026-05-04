@@ -61,11 +61,14 @@ class SessionManager {
   }
 
   void setUser(User? obj) {
-    storage.write("user", obj);
+    storage.write("user", obj?.toJson());
   }
 
   User? getUser() {
     var user = storage.read("user");
+    if (user == null) {
+      return null;
+    }
     if (user is User?) {
       return user;
     } else {

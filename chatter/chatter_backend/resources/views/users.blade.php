@@ -37,9 +37,13 @@
                             <tr>
                                 <th style="width: 100px"> {{ __('userImage') }}</th>
                                 <th> {{ __('fullname') }} </th>
-                                <th> {{ __('username') }} </th>
-                                <th> {{ __('deviceType') }} </th>
-                                <th> {{ __('moderator') }} </th>
+                                <th> Role </th>
+                                <th> Department </th>
+                                <th> Reg. No. </th>
+                                <th> Status </th>
+                                <th> Phone </th>
+                                <th> Gender </th>
+                                <th> Campus </th>
                                 <th style="text-align: right; width: 350px;">{{ __('action') }}</th>
                             </tr>
                         </thead>

@@ -9,6 +9,7 @@ import 'package:untitled/common/extensions/string_extension.dart';
 import 'package:untitled/localization/languages.dart';
 import 'package:untitled/screens/extra_views/logo_tag.dart';
 import 'package:untitled/screens/login_screen/login_controller.dart';
+import 'package:untitled/screens/registration_screen/cui_registration_screen.dart';
 import 'package:untitled/screens/rooms_you_own/create_room_screen/create_room_screen.dart';
 import 'package:untitled/utilities/const.dart';
 
@@ -310,9 +311,8 @@ class _SignInWithEmailScreenState extends State<SignInWithEmailScreen> with Sing
   }
 
   void showSignUp() {
-    setState(() {
-      type = EmailSignInType.signUp;
-    });
+    Get.back();
+    Get.to(() => const CuiRegistrationScreen());
   }
 
   void showForgot() {
