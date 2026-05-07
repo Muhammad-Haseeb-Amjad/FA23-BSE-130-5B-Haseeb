@@ -1,1 +1,15 @@
+# Shared build / IDE artifacts
+**/build/
+**/.dart_tool/
+**/.idea/
+**/*.iml
+**/.flutter-plugins-dependencies
+**/android/.gradle/
+**/android/local.properties
+**/android/key.properties
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# Keep this legacy build folder ignored too
 Class01/dice_app/build/
