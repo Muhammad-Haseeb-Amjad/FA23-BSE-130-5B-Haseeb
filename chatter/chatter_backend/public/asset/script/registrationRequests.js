@@ -48,6 +48,18 @@ $(document).ready(function () {
             $("#rr-status").text((data.approval_status || "approved").toString().charAt(0).toUpperCase() + (data.approval_status || "approved").toString().slice(1));
             $("#rr-submitted").text(data.created_at || "-");
             $("#rr-reason").text(data.rejected_reason || "-");
+
+            const cardUrl = data.university_card_image || "";
+            if (cardUrl) {
+                $("#rr-card-image").attr("src", cardUrl).show();
+                $("#rr-card-open").attr("href", cardUrl).show();
+                $("#rr-card-empty").hide();
+            } else {
+                $("#rr-card-image").attr("src", "").hide();
+                $("#rr-card-open").attr("href", "#").hide();
+                $("#rr-card-empty").show();
+            }
+
             $("#registrationRequestDetailModal").modal("show");
         });
     });

@@ -29,6 +29,7 @@ class User extends Authenticatable
         'bio',
         'interest_ids',
         'profile',
+        'university_card_image',
         'background_image',
         'is_push_notifications',
         'is_invited_to_room',
@@ -69,6 +70,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'otp_code',
+        'university_card_image',
     ];
 
     /**

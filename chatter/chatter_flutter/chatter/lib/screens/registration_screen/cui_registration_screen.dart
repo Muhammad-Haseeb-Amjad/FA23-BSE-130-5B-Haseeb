@@ -1,10 +1,15 @@
+import 'dart:io';
+
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:untitled/common/api_service/user_service.dart';
 import 'package:untitled/common/controller/base_controller.dart';
 import 'package:untitled/common/extensions/font_extension.dart';
 import 'package:untitled/screens/extra_views/logo_tag.dart';
 import 'package:untitled/screens/login_screen/register_otp_screen.dart';
+import 'package:untitled/screens/login_screen/registration_pending_screen.dart';
 import 'package:untitled/utilities/const.dart';
 
 class CuiRegistrationScreen extends StatefulWidget {
@@ -23,6 +28,7 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _batchController = TextEditingController();
+  final _imagePicker = ImagePicker();
 
   final _departments = const [
     'Computer Science',
@@ -55,6 +61,8 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
   String? _gender;
   String _campus = 'COMSATS University Islamabad';
   bool _isLoading = false;
+  XFile? _universityCardImage;
+  bool _cardTouched = false;
 
   @override
   void initState() {
@@ -103,10 +111,34 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
 
     if (_isStudent) {
       final regValid = RegExp(r'^[A-Z]{2}[0-9]{2}-[A-Z]{2,5}-[0-9]{1,4}$').hasMatch(_registrationNumberController.text.trim());
-      return baseValid && regValid && _batchController.text.trim().isNotEmpty;
+      return baseValid && regValid && _batchController.text.trim().isNotEmpty && _universityCardImage != null;
     }
 
-    return baseValid;
+    return baseValid && _universityCardImage != null;
+  }
+
+  Future<void> _onRegisterPressed() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      BaseController.share.showSnackBar('Passwords do not match', type: SnackBarType.error);
+      return;
+    }
+
+    if (_universityCardImage == null) {
+      setState(() => _cardTouched = true);
+      BaseController.share.showSnackBar('Please upload your university card image', type: SnackBarType.error);
+      return;
+    }
+
+    if (enableRegistrationOtp) {
+      await _sendOtp();
+      return;
+    }
+
+    await _registerDirect();
   }
 
   Future<void> _sendOtp() async {
@@ -133,15 +165,48 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
               'email': _emailController.text.trim(),
               'department': _department ?? _departments.first,
               'phone_number': phone,
-              'gender': _gender ?? _genders.first,
+              'gender': (_gender ?? _genders.first).toLowerCase(),
               'password': _passwordController.text,
               'password_confirmation': _confirmPasswordController.text,
               'batch_duration': _isStudent ? _batchController.text.trim() : '',
               'campus': _campus,
+              'university_card_image_path': _universityCardImage?.path ?? '',
             },
           ));
     } else {
       BaseController.share.showSnackBar(response.message ?? 'Failed to send OTP', type: SnackBarType.error);
+    }
+  }
+
+  Future<void> _registerDirect() async {
+    setState(() => _isLoading = true);
+    final phone = _normalizePhone(_phoneController.text);
+
+    final register = await UserService.shared.registerCuiUserWithCard(
+      roleType: _roleType,
+      fullName: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      phoneNumber: phone,
+      department: _department ?? _departments.first,
+      gender: (_gender ?? _genders.first).toLowerCase(),
+      password: _passwordController.text,
+      passwordConfirmation: _confirmPasswordController.text,
+      universityCardImage: _universityCardImage!,
+      registrationNumber: _isStudent ? _registrationNumberController.text.trim() : null,
+      batchDuration: _isStudent ? _batchController.text.trim() : null,
+      campus: _campus,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (register.status == true) {
+      BaseController.share.showSnackBar(
+        'Registration request submitted successfully. Please wait for admin approval.',
+        type: SnackBarType.success,
+      );
+      Get.offAll(() => const RegistrationPendingScreen());
+    } else {
+      BaseController.share.showSnackBar(register.message ?? 'Registration failed', type: SnackBarType.error);
     }
   }
 
@@ -151,6 +216,30 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
       return '0${phone.substring(3)}';
     }
     return phone;
+  }
+
+  Future<void> _pickCardImage() async {
+    final picked = await _imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+    if (picked == null) return;
+
+    final path = picked.path.toLowerCase();
+    final ok = path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png');
+    if (!ok) {
+      BaseController.share.showSnackBar('Only JPG, JPEG, and PNG are supported', type: SnackBarType.error);
+      return;
+    }
+
+    setState(() {
+      _universityCardImage = picked;
+      _cardTouched = true;
+    });
+  }
+
+  void _removeCardImage() {
+    setState(() {
+      _universityCardImage = null;
+      _cardTouched = true;
+    });
   }
 
   Widget _textField({required TextEditingController controller, required String hint, TextInputType keyboardType = TextInputType.text, bool obscure = false, String? Function(String?)? validator}) {
@@ -192,7 +281,11 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
     final active = _roleType == value;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _roleType = value),
+        onTap: () => setState(() {
+          _roleType = value;
+          _universityCardImage = null;
+          _cardTouched = false;
+        }),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -275,8 +368,101 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
                   _dropdown(value: _campus, items: _campuses.toList(), onChanged: (v) => setState(() => _campus = v ?? _campus), hint: 'Campus'),
                 ],
                 const SizedBox(height: 18),
+                Text(
+                  _isStudent ? 'Upload Student Card' : 'Upload Faculty ID Card',
+                  style: MyTextStyle.gilroySemiBold(color: cBlack, size: 15),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Upload a clear photo of your university card for admin verification.',
+                  style: MyTextStyle.gilroyLight(color: cLightText, size: 13),
+                ),
+                const SizedBox(height: 10),
                 GestureDetector(
-                  onTap: _isLoading || !_canSubmit ? null : _sendOtp,
+                  onTap: _isLoading ? null : _pickCardImage,
+                  child: DottedBorder(
+                    options: RoundedRectDottedBorderOptions(
+                      dashPattern: const [6, 6],
+                      color: (_cardTouched && _universityCardImage == null) ? cRed : Colors.grey.shade300,
+                      radius: const Radius.circular(16),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: _universityCardImage == null
+                          ? Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: cPrimary.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Icon(Icons.upload_rounded, color: cPrimary),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Tap to upload', style: MyTextStyle.gilroySemiBold(color: cBlack, size: 14)),
+                                      const SizedBox(height: 2),
+                                      Text('JPG, JPEG, PNG', style: MyTextStyle.gilroyLight(color: cLightText, size: 12)),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.chevron_right_rounded, color: cLightText),
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.file(
+                                    File(_universityCardImage!.path),
+                                    height: 160,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _universityCardImage!.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: MyTextStyle.gilroySemiBold(color: cBlack, size: 13),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    TextButton(
+                                      onPressed: _isLoading ? null : _removeCardImage,
+                                      child: Text('Remove', style: MyTextStyle.gilroySemiBold(color: cRed, size: 13)),
+                                    ),
+                                    TextButton(
+                                      onPressed: _isLoading ? null : _pickCardImage,
+                                      child: Text('Change', style: MyTextStyle.gilroySemiBold(color: cPrimary, size: 13)),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+                if (_cardTouched && _universityCardImage == null) ...[
+                  const SizedBox(height: 8),
+                  Text('University card image is required', style: MyTextStyle.gilroySemiBold(color: cRed, size: 12)),
+                ],
+                const SizedBox(height: 18),
+                GestureDetector(
+                  onTap: _isLoading || !_canSubmit ? null : _onRegisterPressed,
                   child: Container(
                     alignment: Alignment.center,
                     padding: const EdgeInsets.symmetric(vertical: 15),

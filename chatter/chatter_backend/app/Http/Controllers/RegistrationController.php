@@ -16,6 +16,16 @@ use Illuminate\Support\Facades\Validator;
 
 class RegistrationController extends Controller
 {
+    private function registrationOtpEnabled(): bool
+    {
+        $raw = env('REGISTRATION_OTP_ENABLED', 'true');
+        if (is_bool($raw)) {
+            return $raw;
+        }
+        $value = strtolower(trim((string) $raw));
+        return in_array($value, ['1', 'true', 'yes', 'y', 'on'], true);
+    }
+
     private array $departments = [
         'Computer Science',
         'Software Engineering',
@@ -168,7 +178,7 @@ class RegistrationController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Registration request fetched successfully.',
-            'data' => $user,
+            'data' => $user->makeVisible(['university_card_image']),
         ]);
     }
 
@@ -236,6 +246,13 @@ class RegistrationController extends Controller
 
     public function sendRegisterOtp(Request $request)
     {
+        if (!$this->registrationOtpEnabled()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'OTP verification is temporarily disabled. Please submit registration directly.',
+            ]);
+        }
+
         $request->merge(['phone_number' => $this->normalizePhoneNumber((string) $request->phone_number)]);
 
         $validator = Validator::make($request->all(), [
@@ -284,6 +301,13 @@ class RegistrationController extends Controller
 
     public function verifyRegisterOtp(Request $request)
     {
+        if (!$this->registrationOtpEnabled()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'OTP verification is temporarily disabled.',
+            ]);
+        }
+
         $request->merge(['phone_number' => $this->normalizePhoneNumber((string) $request->phone_number)]);
 
         $validator = Validator::make($request->all(), [
@@ -335,6 +359,7 @@ class RegistrationController extends Controller
             'campus' => 'nullable|string|max:255',
             'registration_number' => 'required_if:role_type,student|nullable|string|max:255|unique:users,registration_number',
             'batch_duration' => 'required_if:role_type,student|nullable|string|max:255',
+            'university_card_image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -343,18 +368,24 @@ class RegistrationController extends Controller
 
         $phoneNumber = $this->normalizePhoneNumber($request->phone_number);
 
-        $record = RegistrationOtp::where('phone_number', $phoneNumber)->first();
-        if (!$record || !$record->verified_at) {
-            return response()->json(['status' => false, 'message' => 'Please verify your phone number first.']);
+        $otpEnabled = $this->registrationOtpEnabled();
+        $record = null;
+        if ($otpEnabled) {
+            $record = RegistrationOtp::where('phone_number', $phoneNumber)->first();
+            if (!$record || !$record->verified_at) {
+                return response()->json(['status' => false, 'message' => 'Please verify your phone number first.']);
+            }
+
+            if ($record->consumed_at) {
+                return response()->json(['status' => false, 'message' => 'This verification has already been used.']);
+            }
+
+            if (!$record->otp_expires_at || $record->otp_expires_at->isPast()) {
+                return response()->json(['status' => false, 'message' => 'Phone verification expired. Please verify again.']);
+            }
         }
 
-        if ($record->consumed_at) {
-            return response()->json(['status' => false, 'message' => 'This verification has already been used.']);
-        }
-
-        if (!$record->otp_expires_at || $record->otp_expires_at->isPast()) {
-            return response()->json(['status' => false, 'message' => 'Phone verification expired. Please verify again.']);
-        }
+        $cardImagePath = GlobalFunction::saveFileAndGivePath($request->file('university_card_image'));
 
         $user = new User();
         $user->identity = $request->email;
@@ -369,7 +400,8 @@ class RegistrationController extends Controller
         $user->phone_number = $phoneNumber;
         $user->gender = $request->gender;
         $user->campus = $request->campus ?: 'COMSATS University Islamabad';
-        $user->phone_verified_at = now();
+        $user->university_card_image = $cardImagePath;
+        $user->phone_verified_at = $otpEnabled ? now() : null;
         $user->approved_at = null;
         $user->approved_by = null;
         $user->rejected_reason = null;
@@ -379,12 +411,14 @@ class RegistrationController extends Controller
         $user->device_token = $request->device_token;
         $user->save();
 
-        $record->consumed_at = now();
-        $record->save();
+        if ($otpEnabled && $record) {
+            $record->consumed_at = now();
+            $record->save();
+        }
 
         return response()->json([
             'status' => true,
-            'message' => 'Your registration request has been submitted for admin approval',
+            'message' => 'Registration request submitted successfully. Please wait for admin approval.',
             'data' => $this->privateUserPayload($user, true),
         ]);
     }

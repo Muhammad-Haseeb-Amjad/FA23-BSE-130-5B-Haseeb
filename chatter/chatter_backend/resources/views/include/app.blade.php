@@ -99,7 +99,7 @@
                         <li class="sideBarli registrationRequestsSideA">
                             <a href="{{ route('registrationRequests') }}" class="nav-link">
                                 <i data-feather="user-check"></i>
-                                <span> Registration Requests </span>
+                                <span> Requests </span>
                             </a>
                         </li>
                         <li class="sideBarli postSideA">

@@ -350,6 +350,56 @@ class UserService {
     return result;
   }
 
+  Future<Registration> registerCuiUserWithCard({
+    required String roleType,
+    required String fullName,
+    required String email,
+    required String phoneNumber,
+    required String department,
+    required String gender,
+    required String password,
+    required String passwordConfirmation,
+    required XFile universityCardImage,
+    String? registrationNumber,
+    String? batchDuration,
+    String? campus,
+  }) async {
+    late Registration result;
+    final param = <String, String>{
+      Param.roleType: roleType,
+      Param.fullName: fullName,
+      Param.email: email,
+      Param.phoneNumber: phoneNumber,
+      Param.department: department,
+      Param.gender: gender,
+      Param.password: password,
+      Param.passwordConfirmation: passwordConfirmation,
+      Param.campus: campus ?? 'COMSATS University Islamabad',
+      Param.deviceType: (GetPlatform.isIOS ? 1 : 0).toString(),
+      Param.deviceToken: 'deviceToken',
+    };
+
+    if (registrationNumber != null && registrationNumber.isNotEmpty) {
+      param[Param.registrationNumber] = registrationNumber;
+    }
+    if (batchDuration != null && batchDuration.isNotEmpty) {
+      param[Param.batchDuration] = batchDuration;
+    }
+
+    await ApiService.shared.multiPartCallApi(
+      url: WebService.register,
+      param: param,
+      filesMap: {
+        Param.universityCardImage: [universityCardImage],
+      },
+      completion: (response) {
+        result = Registration.fromJson(response);
+      },
+    );
+
+    return result;
+  }
+
   void checkForUsername(String username, Function(bool) completion) {
     ApiService.shared.call(
         url: WebService.checkUsername,

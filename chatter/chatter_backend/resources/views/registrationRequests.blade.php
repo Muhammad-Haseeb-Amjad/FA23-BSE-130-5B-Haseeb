@@ -110,6 +110,18 @@
                     <div class="col-md-6"><strong>Status:</strong> <span id="rr-status"></span></div>
                     <div class="col-md-6"><strong>Submitted At:</strong> <span id="rr-submitted"></span></div>
                     <div class="col-md-12"><strong>Rejected Reason:</strong> <span id="rr-reason"></span></div>
+                    <div class="col-md-12">
+                        <strong>University Card / ID Card:</strong>
+                        <div class="mt-2" id="rr-card-wrap">
+                            <div class="d-flex flex-column flex-md-row align-items-start gap-3">
+                                <img id="rr-card-image" src="" alt="University card" style="display:none; max-width: 100%; width: 260px; height: auto; border-radius: 12px; border: 1px solid rgba(0,0,0,0.12);" />
+                                <div class="d-flex flex-column gap-2">
+                                    <a id="rr-card-open" href="#" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="display:none; width: fit-content;">Open Full Image</a>
+                                    <span id="rr-card-empty" class="text-muted" style="display:none;">No card uploaded</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

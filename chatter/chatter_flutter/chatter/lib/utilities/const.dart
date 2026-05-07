@@ -21,6 +21,9 @@ const String agoraAppId = 'agora_app_id';
 const String agoraCustomerId = 'agora_customer_id';
 const String agoraCustomerSecret = 'agora_customer_secret';
 
+// Temporary toggle: keep OTP code but bypass it.
+const bool enableRegistrationOtp = false;
+
 class Limits {
   static int username = 30;
   static int roomDescCount = 120;

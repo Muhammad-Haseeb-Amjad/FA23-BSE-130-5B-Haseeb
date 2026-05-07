@@ -69,6 +69,8 @@ Route::post('forgotPasswordForm', [LoginController::class, 'forgotPasswordForm']
 Route::get('logout', [LoginController::class, 'logout'])->middleware(['checkLogin'])->name('logout');
 
 Route::get('index', [SettingsController::class, 'index'])->middleware(['checkLogin'])->name('index');
+// Backward/forward compatibility: some builds redirect to /dashboard
+Route::get('dashboard', [SettingsController::class, 'index'])->middleware(['checkLogin'])->name('dashboard');
 Route::get('fetchAllChartData', [SettingsController::class, 'fetchAllChartData'])->name('fetchAllChartData');
 
 // Notification

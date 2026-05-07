@@ -3999,9 +3999,12 @@ body.sidebar-gone .main-sidebar {
 }
 .main-sidebar .sidebar-menu li a span {
   width: 100%;
-  line-height: 1px;
+  line-height: 1.2;
   font-size: 14px;
   text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .main-sidebar .sidebar-menu li a:hover {
   background-color: #f2f5f8;

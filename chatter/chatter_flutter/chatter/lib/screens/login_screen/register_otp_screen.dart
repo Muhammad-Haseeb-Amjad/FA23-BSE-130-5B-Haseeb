@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:untitled/common/api_service/user_service.dart';
 import 'package:untitled/common/controller/base_controller.dart';
 import 'package:untitled/common/extensions/font_extension.dart';
@@ -79,7 +81,14 @@ class _RegisterOtpScreenState extends State<RegisterOtpScreen> {
       return;
     }
 
-    final register = await UserService.shared.registerCuiUser(
+    final cardPath = widget.formData['university_card_image_path']?.toString();
+    if (cardPath == null || cardPath.isEmpty || !File(cardPath).existsSync()) {
+      setState(() => _loading = false);
+      BaseController.share.showSnackBar('University card image is required', type: SnackBarType.error);
+      return;
+    }
+
+    final register = await UserService.shared.registerCuiUserWithCard(
       roleType: widget.formData['role_type'] as String,
       fullName: widget.formData['full_name'] as String,
       email: widget.formData['email'] as String,
@@ -88,6 +97,7 @@ class _RegisterOtpScreenState extends State<RegisterOtpScreen> {
       gender: widget.formData['gender'] as String,
       password: widget.formData['password'] as String,
       passwordConfirmation: widget.formData['password_confirmation'] as String,
+      universityCardImage: XFile(cardPath),
       registrationNumber: widget.formData['registration_number']?.toString(),
       batchDuration: widget.formData['batch_duration']?.toString(),
       campus: widget.formData['campus']?.toString(),
