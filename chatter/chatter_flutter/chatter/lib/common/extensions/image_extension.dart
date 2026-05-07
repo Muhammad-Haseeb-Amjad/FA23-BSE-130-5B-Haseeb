@@ -13,7 +13,7 @@ class MyImages {
   static var close = '${assetBase}close.png';
   static var comment = '${assetBase}comment.png';
   static var placeHolderImage = '${assetBase}placeholder-image.png';
-  static var logo = '${assetBase}logo.png';
+  static var logo = '${assetBase}cuichat-logo.png';
   static var logoBlack = '${assetBase}logo_black.png';
   static var logoWhite = '${assetBase}logo_white.png';
   static var send = '${assetBase}send.png';

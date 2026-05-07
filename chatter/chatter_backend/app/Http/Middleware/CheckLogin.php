@@ -26,7 +26,7 @@ class CheckLogin
       if (Session::get('user_name')) {
             return $response;
         } else {
-            return redirect(url('/'));
+            return redirect(url('/admin'));
         }
     }
 }

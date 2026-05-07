@@ -3,8 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
-    <title>{!! Session::get('app_name') !!}</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <title>CUICHAT Admin Login</title>
+    <meta name="description" content="Secure admin login for CUICHAT, the COMSATS University Islamabad social platform.">
     <!-- General CSS Files -->
     <link rel="stylesheet" href="{{ asset('asset/css/app.min.css') }}">
     <link rel="stylesheet" href="{{ asset('asset/bundles/bootstrap-social/bootstrap-social.css') }}">
@@ -16,8 +17,12 @@
     <link rel="stylesheet" href="{{ asset('asset/css/components.css') }}">
     <!-- Custom style CSS -->
     <link rel="stylesheet" href="{{ asset('asset/css/loginPage.css') }}">
-    <link rel='shortcut icon' type='image/x-icon' href="{{ asset('asset/img/favicon.png') }}" style="width: 2px !important;" />
+    <meta name="theme-color" content="#00113a">
+    <link rel="icon" type="image/png" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
 </head>
+
 
 <body>
     <div class="loader"></div>

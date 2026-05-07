@@ -5,8 +5,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
-    <title>{!! Session::get('app_name') !!}</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <title>CUICHAT Admin Panel</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <!-- include summernote css/js -->
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet">
@@ -18,7 +18,10 @@
 
     <link href="{{ asset('asset/css/bootstrap.min.css') }}" rel="stylesheet">
 
-    <link rel='shortcut icon' type='image/x-icon' href="{{ asset('asset/img/favicon.png') }}" style="width: 2px !important;" />
+    <meta name="theme-color" content="#00113a">
+    <link rel="icon" type="image/png" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
 
     <link href="{{ asset('asset/bundles/codemirror/lib/codemirror.css') }}" rel="stylesheet">
     <link href="{{ asset('asset/bundles/codemirror/theme/duotone-dark.css') }} " rel="stylesheet">
@@ -39,35 +42,19 @@
 </head>
 
 <body>
-    <!-- <div class="loader">
-        <div class="lds-ring">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-        </div>
-    </div> -->
     <div id="app">
         <div class="main-wrapper main-wrapper-1">
             <div class="navbar-bg"></div>
             <nav class="navbar navbar-expand-lg main-navbar sticky">
-                <!-- <div class="ms-4">
-                    @if (session('user_type') == 0)
-                    <h5 class="mb-0 fw-normal">{{__('forTestingPurpose')}} ( {{__('adminPanel')}} ) </h5>
-                    @else
-                    <h5 class="mb-0 fw-normal"> {{ __('adminPanel') }}</h5>
-                    @endif
-                </div> -->
                 <div class="form-inline mr-auto collapse-btn">
                      <ul class="navbar-nav mr-3">
                         <li>
                             <a href="#" data-toggle="sidebar" class="nav-link nav-link-lg text-dark d-flex align-items-center justify-content-center">
-                                <!-- <i data-feather="menu"></i> -->
                                 <svg class="menu-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                                 <svg class="close-svg" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </a>
                         </li>
-                    </ul> 
+                    </ul>
                 </div>
                 <ul class="navbar-nav navbar-right">
                     <li class="dropdown">

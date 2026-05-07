@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\FAQsController;
@@ -56,8 +56,12 @@ Route::get('/.well-known/assetlinks.json', function () {
     ]);
 });
 
-// Admin login (default entry point)
-Route::get('/', [LoginController::class, 'login'])->name('/');
+// Public landing page
+Route::view('/', 'landing')->name('/');
+
+// Separate admin login entry points
+Route::get('/login', [LoginController::class, 'login'])->name('login');
+Route::get('/admin-login', [LoginController::class, 'login'])->name('admin.login.page');
 // Support /admin URL for consistency with shared demos
 Route::get('/admin', [LoginController::class, 'login'])->name('admin.login');
 Route::post('loginForm', [LoginController::class, 'checklogin'])->name('loginForm');

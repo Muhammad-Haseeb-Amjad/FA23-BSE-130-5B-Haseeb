@@ -54,11 +54,16 @@ class ApiService {
     Loggers.info("Parameters: ${params.isEmpty ? "Empty" : JsonEncoder.withIndent('  ').convert(params)}");
 
     try {
-      final response = await client.post(
-        Uri.parse(url),
-        headers: header,
-        body: params,
-      );
+      final response = await client
+          .post(
+            Uri.parse(url),
+            headers: header,
+            body: params,
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw Exception('Request timed out after 30s — server may be slow or unreachable'),
+          );
 
       if (cancelToken?.isCancelled ?? false) {
         if (kDebugMode) {
@@ -79,13 +84,15 @@ class ApiService {
         final errorBody = response.body;
         final errorMessage = _extractErrorMessage(errorBody);
         Loggers.error(errorMessage);
-        // Handle HTTP errors
         throw Exception("HTTP Error: ${response.statusCode} - ${response.reasonPhrase}");
       }
-    } on HttpException {
+    } on SocketException catch (e) {
+      Loggers.error("Socket error: $e");
+      throw Exception('Could not connect to the server. Check your internet connection.');
+    } on HttpException catch (e) {
+      Loggers.error("HTTP exception: $e");
       throw Exception('Could not connect to the server');
     } on FormatException catch (e) {
-      // Handle JSON decoding errors
       Loggers.error("Invalid JSON format: ${e.message}");
       throw Exception("Invalid JSON format: ${e.message}");
     } on Exception catch (e) {

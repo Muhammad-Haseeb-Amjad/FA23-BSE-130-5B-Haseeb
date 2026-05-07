@@ -9,7 +9,7 @@
         android:name="${applicationName}"
         android:extractNativeLibs="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Chatter"
+        android:label="CUICHAT"
         android:usesCleartextTraffic="true">
 
         <activity

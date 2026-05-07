@@ -5419,3 +5419,70 @@ video#reel_contents {
   font-size: 10px;
   box-shadow: none !important;
 }
+
+
+/* =============================================================
+   GLOBAL ADMIN TABLE OVERFLOW FIX
+   Prevents tables from escaping their card containers and
+   causing page-level horizontal scroll.
+   Applied to all admin pages: Users, Posts, Reels, Rooms,
+   Registration Requests, Music, Stories, Interests, etc.
+   ============================================================= */
+
+/* 1. Card must clip its content — no table escaping the card */
+.card {
+  overflow: hidden;
+}
+
+/* 2. Every table wrapper scrolls horizontally inside the card */
+.card .table-responsive,
+.card-body .table-responsive {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 3. DataTables wrapper must not exceed card width */
+.dataTables_wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* 4. DataTables scroll containers */
+.dataTables_scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.dataTables_scrollHead,
+.dataTables_scrollBody {
+  width: 100% !important;
+  max-width: 100%;
+}
+
+/* 5. Tables inside cards fill their wrapper */
+.card table.dataTable,
+.card .table-responsive table {
+  width: 100% !important;
+}
+
+/* 6. Prevent the main content area from creating page-level
+      horizontal scroll due to table overflow */
+.main-content {
+  overflow-x: hidden;
+}
+
+/* 7. DataTables search/length controls stay inside card */
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-const String appName = "Chatter";
+const String appName = "CUICHAT";
 // IMPORTANT: Point this to the machine/IP that the phone/emulator can reach.
 // Keep the trailing slash so paths resolve correctly (avoids "invalid port" errors).
 // For Android physical device on same LAN: use your machine IP (10.203.17.216:8888)

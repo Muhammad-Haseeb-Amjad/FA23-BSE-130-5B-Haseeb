@@ -12,7 +12,7 @@ $(document).ready(function () {
       processData: false,
       success: function (response) {
         if (response.status) {
-          window.location.href = `${domainUrl}index`;
+          window.location.href = `${domainUrl}dashboard`;
         } else {
           iziToast.show({
             title: "Error",

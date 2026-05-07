@@ -5,7 +5,6 @@ use App\Models\Admin;
 use App\Models\GlobalFunction;
 use App\Models\Setting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Crypt;
 
@@ -18,10 +17,12 @@ class LoginController extends Controller
         if ($setting) {
             Session::put('app_name', $setting->app_name);
         }
-        Artisan::call('storage:link');
+
+        // If already logged in, go straight to dashboard
         if (Session::get('user_name')) {
-            return redirect('/index');
+            return redirect('/dashboard');
         }
+
         return view('login');
     }
 
@@ -80,6 +81,15 @@ class LoginController extends Controller
         }
 
         return GlobalFunction::sendSimpleResponse(false, 'Wrong credentials.');
+    }
+
+    public function logout(Request $request)
+    {
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        Session::flush();
+
+        return redirect('/');
     }
 
     public function forgotPasswordForm(Request $request)
