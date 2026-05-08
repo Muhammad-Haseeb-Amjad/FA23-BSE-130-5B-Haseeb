@@ -13,6 +13,7 @@ class Param {
   static const passwordConfirmation = "password_confirmation";
   static const otp = "otp";
   static const universityCardImage = "university_card_image";
+  static const registrationOtpEnabled = "registration_otp_enabled";
   static const loginType = "login_type";
   static const deviceType = "device_type";
   static const deviceToken = "device_token";

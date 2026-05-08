@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:untitled/common/api_service/user_service.dart';
@@ -63,6 +64,8 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
   bool _isLoading = false;
   XFile? _universityCardImage;
   bool _cardTouched = false;
+  bool _isPasswordObscured = true;
+  bool _isConfirmPasswordObscured = true;
 
   @override
   void initState() {
@@ -97,7 +100,7 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
   bool get _isStudent => _roleType == 'student';
 
   bool get _canSubmit {
-    final phoneValid = RegExp(r'^(03\d{9}|\+923\d{9})$').hasMatch(_phoneController.text.trim());
+    final phoneValid = RegExp(r'^03\d{9}$').hasMatch(_phoneController.text.trim());
     final passwordsMatch = _passwordController.text.isNotEmpty && _passwordController.text == _confirmPasswordController.text;
     final baseValid = _nameController.text.trim().isNotEmpty &&
         _emailController.text.trim().isNotEmpty &&
@@ -192,6 +195,7 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
       password: _passwordController.text,
       passwordConfirmation: _confirmPasswordController.text,
       universityCardImage: _universityCardImage!,
+      registrationOtpEnabled: enableRegistrationOtp,
       registrationNumber: _isStudent ? _registrationNumberController.text.trim() : null,
       batchDuration: _isStudent ? _batchController.text.trim() : null,
       campus: _campus,
@@ -242,12 +246,21 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
     });
   }
 
-  Widget _textField({required TextEditingController controller, required String hint, TextInputType keyboardType = TextInputType.text, bool obscure = false, String? Function(String?)? validator}) {
+  Widget _textField({
+    required TextEditingController controller,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscure = false,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
+    Widget? suffixIcon,
+  }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscure,
       validator: validator,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
@@ -256,6 +269,7 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade300)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade300)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: cPrimary, width: 1.3)),
+        suffixIcon: suffixIcon,
       ),
     );
   }
@@ -322,7 +336,7 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
                 const SizedBox(height: 18),
                 Text('Register', textAlign: TextAlign.center, style: MyTextStyle.gilroyBold(size: 26)),
                 const SizedBox(height: 10),
-                Text('Create your COMSATS CUI Chatter account', textAlign: TextAlign.center, style: MyTextStyle.gilroyLight(color: cLightText, size: 15)),
+                Text('Create your CUI Chat Account', textAlign: TextAlign.center, style: MyTextStyle.gilroyLight(color: cLightText, size: 15)),
                 const SizedBox(height: 22),
                 Row(children: [_roleButton('Student', 'student'), const SizedBox(width: 12), _roleButton('Faculty', 'faculty')]),
                 const SizedBox(height: 18),
@@ -339,13 +353,56 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
                   const SizedBox(height: 12),
                   _dropdown(value: _department!, items: _departments, onChanged: (v) => setState(() => _department = v), hint: 'Department'),
                   const SizedBox(height: 12),
-                  _textField(controller: _phoneController, hint: 'Phone Number (03xxxxxxxxx or +923xxxxxxxxx)', keyboardType: TextInputType.phone, validator: (v) => (v == null || !RegExp(r'^(03\d{9}|\+923\d{9})$').hasMatch(_normalizePhone(v))) ? 'Enter a valid phone number' : null),
+                  _textField(
+                    controller: _phoneController,
+                    hint: 'Phone Number (03xxxxxxxxx)',
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(11),
+                    ],
+                    validator: (v) {
+                      final value = v?.trim() ?? '';
+                      final valid = RegExp(r'^03\d{9}$').hasMatch(value);
+                      return valid ? null : 'Enter a valid 11-digit phone number starting with 03';
+                    },
+                  ),
                   const SizedBox(height: 12),
                   _dropdown(value: _gender!, items: _genders, onChanged: (v) => setState(() => _gender = v), hint: 'Gender'),
                   const SizedBox(height: 12),
-                  _textField(controller: _passwordController, hint: 'Password', obscure: true, validator: (v) => (v == null || v.length < 6) ? 'Password must be at least 6 characters' : null),
+                  _textField(
+                    controller: _passwordController,
+                    hint: 'Password',
+                    obscure: _isPasswordObscured,
+                    inputFormatters: null,
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setState(() => _isPasswordObscured = !_isPasswordObscured);
+                      },
+                      icon: Icon(
+                        _isPasswordObscured ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                        color: cLightText,
+                      ),
+                    ),
+                    validator: (v) => (v == null || v.length < 6) ? 'Password must be at least 6 characters' : null,
+                  ),
                   const SizedBox(height: 12),
-                  _textField(controller: _confirmPasswordController, hint: 'Confirm Password', obscure: true, validator: (v) => v != _passwordController.text ? 'Passwords do not match' : null),
+                  _textField(
+                    controller: _confirmPasswordController,
+                    hint: 'Confirm Password',
+                    obscure: _isConfirmPasswordObscured,
+                    inputFormatters: null,
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setState(() => _isConfirmPasswordObscured = !_isConfirmPasswordObscured);
+                      },
+                      icon: Icon(
+                        _isConfirmPasswordObscured ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                        color: cLightText,
+                      ),
+                    ),
+                    validator: (v) => v != _passwordController.text ? 'Passwords do not match' : null,
+                  ),
                   const SizedBox(height: 12),
                   _textField(controller: _batchController, hint: 'Batch Duration (FA23-SP27)', validator: (v) => (v == null || v.trim().isEmpty) ? 'Batch duration is required' : null),
                   const SizedBox(height: 12),
@@ -357,13 +414,54 @@ class _CuiRegistrationScreenState extends State<CuiRegistrationScreen> {
                   const SizedBox(height: 12),
                   _dropdown(value: _gender!, items: _genders, onChanged: (v) => setState(() => _gender = v), hint: 'Gender'),
                   const SizedBox(height: 12),
-                  _textField(controller: _phoneController, hint: 'Phone Number (03xxxxxxxxx or +923xxxxxxxxx)', keyboardType: TextInputType.phone, validator: (v) => (v == null || !RegExp(r'^(03\d{9}|\+923\d{9})$').hasMatch(_normalizePhone(v))) ? 'Enter a valid phone number' : null),
+                  _textField(
+                    controller: _phoneController,
+                    hint: 'Phone Number (03xxxxxxxxx)',
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(11),
+                    ],
+                    validator: (v) {
+                      final value = v?.trim() ?? '';
+                      final valid = RegExp(r'^03\d{9}$').hasMatch(value);
+                      return valid ? null : 'Enter a valid 11-digit phone number starting with 03';
+                    },
+                  ),
                   const SizedBox(height: 12),
                   _textField(controller: _emailController, hint: 'Email', keyboardType: TextInputType.emailAddress, validator: (v) => (v == null || !GetUtils.isEmail(v.trim())) ? 'Enter a valid email' : null),
                   const SizedBox(height: 12),
-                  _textField(controller: _passwordController, hint: 'Password', obscure: true, validator: (v) => (v == null || v.length < 6) ? 'Password must be at least 6 characters' : null),
+                  _textField(
+                    controller: _passwordController,
+                    hint: 'Password',
+                    obscure: _isPasswordObscured,
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setState(() => _isPasswordObscured = !_isPasswordObscured);
+                      },
+                      icon: Icon(
+                        _isPasswordObscured ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                        color: cLightText,
+                      ),
+                    ),
+                    validator: (v) => (v == null || v.length < 6) ? 'Password must be at least 6 characters' : null,
+                  ),
                   const SizedBox(height: 12),
-                  _textField(controller: _confirmPasswordController, hint: 'Confirm Password', obscure: true, validator: (v) => v != _passwordController.text ? 'Passwords do not match' : null),
+                  _textField(
+                    controller: _confirmPasswordController,
+                    hint: 'Confirm Password',
+                    obscure: _isConfirmPasswordObscured,
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setState(() => _isConfirmPasswordObscured = !_isConfirmPasswordObscured);
+                      },
+                      icon: Icon(
+                        _isConfirmPasswordObscured ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                        color: cLightText,
+                      ),
+                    ),
+                    validator: (v) => v != _passwordController.text ? 'Passwords do not match' : null,
+                  ),
                   const SizedBox(height: 12),
                   _dropdown(value: _campus, items: _campuses.toList(), onChanged: (v) => setState(() => _campus = v ?? _campus), hint: 'Campus'),
                 ],

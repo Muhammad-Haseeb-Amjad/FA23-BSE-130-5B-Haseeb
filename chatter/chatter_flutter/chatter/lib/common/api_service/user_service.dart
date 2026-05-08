@@ -360,6 +360,7 @@ class UserService {
     required String password,
     required String passwordConfirmation,
     required XFile universityCardImage,
+    required bool registrationOtpEnabled,
     String? registrationNumber,
     String? batchDuration,
     String? campus,
@@ -377,6 +378,7 @@ class UserService {
       Param.campus: campus ?? 'COMSATS University Islamabad',
       Param.deviceType: (GetPlatform.isIOS ? 1 : 0).toString(),
       Param.deviceToken: 'deviceToken',
+      Param.registrationOtpEnabled: registrationOtpEnabled ? '1' : '0',
     };
 
     if (registrationNumber != null && registrationNumber.isNotEmpty) {

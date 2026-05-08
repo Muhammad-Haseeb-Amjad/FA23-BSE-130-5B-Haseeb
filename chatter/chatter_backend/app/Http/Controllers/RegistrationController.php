@@ -369,6 +369,13 @@ class RegistrationController extends Controller
         $phoneNumber = $this->normalizePhoneNumber($request->phone_number);
 
         $otpEnabled = $this->registrationOtpEnabled();
+        // Request-level override (used by the mobile app to temporarily bypass OTP).
+        // When set, it takes precedence over env('REGISTRATION_OTP_ENABLED').
+        $overrideRaw = $request->input('registration_otp_enabled');
+        if ($overrideRaw !== null) {
+            $overrideValue = strtolower(trim((string) $overrideRaw));
+            $otpEnabled = in_array($overrideValue, ['1', 'true', 'yes', 'y', 'on'], true);
+        }
         $record = null;
         if ($otpEnabled) {
             $record = RegistrationOtp::where('phone_number', $phoneNumber)->first();

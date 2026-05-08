@@ -98,6 +98,7 @@ class _RegisterOtpScreenState extends State<RegisterOtpScreen> {
       password: widget.formData['password'] as String,
       passwordConfirmation: widget.formData['password_confirmation'] as String,
       universityCardImage: XFile(cardPath),
+      registrationOtpEnabled: true,
       registrationNumber: widget.formData['registration_number']?.toString(),
       batchDuration: widget.formData['batch_duration']?.toString(),
       campus: widget.formData['campus']?.toString(),
