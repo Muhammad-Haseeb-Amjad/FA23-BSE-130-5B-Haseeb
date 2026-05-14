@@ -10,9 +10,9 @@
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://cuichat.online/">
 <meta name="theme-color" content="#00113a">
-<link rel="icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
-<link rel="shortcut icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
-<link rel="apple-touch-icon" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
+<link rel="icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2">
+<link rel="shortcut icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2">
+<link rel="apple-touch-icon" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cuichat.online/">
 <meta property="og:title" content="CUI_CHAT | COMSATS University Islamabad Social Platform">
@@ -1133,6 +1133,10 @@ html{scroll-behavior:smooth;}
 
 /* ══════════════════════════════════════════
    CUICHAT LOGO — ROUNDED-SQUARE
+   NOTE: logo file is a JPEG (no alpha channel).
+   The white padding in the JPEG is cropped via scale(1.15)
+   + overflow:hidden. filter:brightness boosts visibility
+   on dark navbar/footer backgrounds.
 ══════════════════════════════════════════ */
 .cuichat-logo-wrap {
   width: 54px; height: 54px;
@@ -1142,9 +1146,9 @@ html{scroll-behavior:smooth;}
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+  background: rgba(255,255,255,0.10) !important;
+  border: 1px solid rgba(34,211,238,0.35) !important;
+  box-shadow: 0 0 18px rgba(34,211,238,0.28), 0 4px 16px rgba(0,0,0,0.25) !important;
   padding: 0 !important;
 }
 .cuichat-logo-img {
@@ -1153,10 +1157,10 @@ html{scroll-behavior:smooth;}
   object-fit: cover;
   object-position: center;
   border-radius: 0;
-  background: transparent !important;
   padding: 0 !important;
   margin: 0 !important;
-  transform: scale(1.18);
+  transform: scale(1.15);
+  filter: brightness(1.15) contrast(1.10) saturate(1.10);
 }
 /* Legacy alias */
 .cuichat-logo-circle { display: none; }
@@ -1895,7 +1899,7 @@ html{scroll-behavior:smooth;}
     <!-- Logo -->
     <a href="#home" class="flex items-center gap-2 no-underline">
       <div class="cuichat-logo-wrap">
-        <img src="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2" alt="CUI_CHAT Logo" class="cuichat-logo-img">
+        <img src="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2" alt="CUI_CHAT Logo" class="cuichat-logo-img">
       </div>
       <span class="text-xl font-black text-white tracking-tight">CUI_CHAT</span>
     </a>
@@ -2263,7 +2267,7 @@ html{scroll-behavior:smooth;}
         <!-- CUICHAT -->
         <div class="cuichat-vs-brand cuichat">
           <div class="cuichat-vs-icon">
-            <img src="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2" alt="CUI_CHAT" style="width:44px;height:44px;object-fit:cover;border-radius:14px;transform:scale(1.18);">
+            <img src="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2" alt="CUI_CHAT" style="width:44px;height:44px;object-fit:cover;border-radius:14px;transform:scale(1.15);filter:brightness(1.15) contrast(1.10);">
           </div>
           <span class="cuichat-vs-label">CUI_CHAT</span>
         </div>
@@ -2877,7 +2881,7 @@ html{scroll-behavior:smooth;}
       <div class="space-y-4 footer-reveal" style="transition-delay:0s;">
         <div class="flex items-center gap-3">
           <div class="cuichat-logo-wrap">
-            <img src="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2" alt="CUI_CHAT Logo" class="cuichat-logo-img">
+            <img src="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2" alt="CUI_CHAT Logo" class="cuichat-logo-img">
           </div>
           <span class="text-xl font-black" style="background:linear-gradient(90deg,#00dddd,#dfb7ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:'Plus Jakarta Sans',sans-serif;">CUI_CHAT</span>
         </div>

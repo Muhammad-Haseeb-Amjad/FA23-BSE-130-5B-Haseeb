@@ -292,6 +292,62 @@ class UserService {
     return result;
   }
 
+  Future<CommonResponse> forgotPasswordRequest(String email) async {
+    late CommonResponse result;
+    await ApiService.shared.call(
+      url: WebService.forgotPassword,
+      param: {'email': email.trim().toLowerCase()},
+      completion: (response) {
+        result = CommonResponse.fromJson(response);
+      },
+    );
+    return result;
+  }
+
+  Future<Registration> loginWithEmail({
+    required String email,
+    required String password,
+    required String deviceToken,
+    required int deviceType,
+  }) async {
+    late Registration result;
+    await ApiService.shared.call(
+      url: WebService.loginWithEmail,
+      param: {
+        'email': email.trim().toLowerCase(),
+        'password': password,
+        'device_token': deviceToken,
+        'device_type': deviceType.toString(),
+      },
+      completion: (response) {
+        result = Registration.fromJson(response);
+      },
+    );
+    return result;
+  }
+
+  Future<CommonResponse> resetPasswordRequest({
+    required String email,
+    required String otp,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    late CommonResponse result;
+    await ApiService.shared.call(
+      url: WebService.resetPassword,
+      param: {
+        'email': email.trim().toLowerCase(),
+        'otp': otp.trim(),
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+      completion: (response) {
+        result = CommonResponse.fromJson(response);
+      },
+    );
+    return result;
+  }
+
   Future<CommonResponse> verifyRegisterOtp(String phoneNumber, String otp) async {
     late CommonResponse result;
     await ApiService.shared.call(

@@ -1,5 +1,4 @@
 import 'package:figma_squircle_updated/figma_squircle.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:untitled/common/api_service/user_service.dart';
@@ -8,7 +7,6 @@ import 'package:untitled/common/extensions/font_extension.dart';
 import 'package:untitled/common/extensions/string_extension.dart';
 import 'package:untitled/localization/languages.dart';
 import 'package:untitled/screens/extra_views/logo_tag.dart';
-import 'package:untitled/screens/login_screen/login_controller.dart';
 import 'package:untitled/screens/registration_screen/cui_registration_screen.dart';
 import 'package:untitled/screens/rooms_you_own/create_room_screen/create_room_screen.dart';
 import 'package:untitled/utilities/const.dart';
@@ -105,6 +103,8 @@ class _SignInWithEmailScreenState extends State<SignInWithEmailScreen> with Sing
         return signUpView();
       case EmailSignInType.forgot:
         return forgotView();
+      case EmailSignInType.resetOtp:
+        return resetOtpView();
     }
   }
 
@@ -115,6 +115,8 @@ class _SignInWithEmailScreenState extends State<SignInWithEmailScreen> with Sing
       case EmailSignInType.signUp:
         return LKeys.register;
       case EmailSignInType.forgot:
+        return LKeys.forgotPassword;
+      case EmailSignInType.resetOtp:
         return LKeys.forgotPassword;
     }
   }
@@ -136,34 +138,48 @@ class _SignInWithEmailScreenState extends State<SignInWithEmailScreen> with Sing
               onTap: () async {
                 baseController.startLoading();
                 try {
-                  await FirebaseAuth.instance.signInWithEmailAndPassword(
+                  // Use Laravel/MySQL backend for email login — CUI users are
+                  // stored in MySQL after admin approval, NOT in Firebase Auth.
+                  final result = await UserService.shared.loginWithEmail(
                     email: emailController.text,
                     password: passwordController.text,
+                    deviceToken: 'deviceToken',
+                    deviceType: GetPlatform.isIOS ? 1 : 0,
                   );
-                  // Temporarily skip email verification for development
-                  // if (credential.user?.emailVerified == true) {
-                    Get.back();
-                    widget.onSubmit(fullNameController.text == "" ? null : fullNameController.text, emailController.text);
-                  // } else {
-                  //   baseController.stopLoading();
-                  //   baseController.showSnackBar(LKeys.pleaseVerifyToSignIn.tr, type: SnackBarType.error);
-                  // }
-                } on FirebaseAuthException catch (e) {
                   baseController.stopLoading();
-                  baseController.showSnackBar(e.message ?? '', type: SnackBarType.error);
+                  if (result.status == true) {
+                    Get.back();
+                    widget.onSubmit(
+                      result.data?.fullName,
+                      emailController.text,
+                    );
+                  } else {
+                    baseController.showSnackBar(
+                      result.message ?? 'Invalid email or password.',
+                      type: SnackBarType.error,
+                    );
+                  }
                 } catch (e) {
-                  print(e);
+                  baseController.stopLoading();
+                  baseController.showSnackBar(
+                    'Network error. Please check your connection.',
+                    type: SnackBarType.error,
+                  );
                 }
               }),
-          Row(
+          // Responsive bottom row — use Wrap to prevent overflow on small screens
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            runSpacing: 4,
             children: [
               LKeys.doNtHaveAnAccount.toTextTR(MyTextStyle.gilroyLight(color: cLightText, size: 14)),
-              const SizedBox(width: 5),
               GestureDetector(
                 onTap: showSignUp,
                 child: LKeys.signUp.toTextTR(MyTextStyle.gilroySemiBold(color: cBlack, size: 14)),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: showForgot,
                 child: LKeys.forgotPassword.toTextTR(MyTextStyle.gilroySemiBold(color: cBlack, size: 14)),
@@ -191,32 +207,38 @@ class _SignInWithEmailScreenState extends State<SignInWithEmailScreen> with Sing
               onTap: () async {
                 baseController.startLoading();
                 try {
-                  await FirebaseAuth.instance.sendPasswordResetEmail(email: emailController.text);
+                  final result = await UserService.shared
+                      .forgotPasswordRequest(emailController.text);
                   baseController.stopLoading();
-                  baseController.showSnackBar(LKeys.linkSendToReset.tr, type: SnackBarType.success);
-                  setState(() {
-                    type = EmailSignInType.signIn;
-                  });
-                } on FirebaseAuthException catch (e) {
-                  baseController.stopLoading();
-                  baseController.showSnackBar(e.message ?? '', type: SnackBarType.error);
+                  if (result.status == true) {
+                    baseController.showSnackBar(
+                      result.message ?? 'OTP sent to your email.',
+                      type: SnackBarType.success,
+                    );
+                    setState(() {
+                      type = EmailSignInType.resetOtp;
+                    });
+                  } else {
+                    baseController.showSnackBar(
+                      result.message ?? 'Could not send OTP. Please try again.',
+                      type: SnackBarType.error,
+                    );
+                  }
                 } catch (e) {
-                  print(e);
                   baseController.stopLoading();
+                  baseController.showSnackBar(
+                    'Network error. Please check your connection.',
+                    type: SnackBarType.error,
+                  );
                 }
               }),
           Row(
             children: [
-              LKeys.doNtHaveAnAccount.toTextTR(MyTextStyle.gilroyLight(color: cLightText, size: 14)),
+              LKeys.iHaveAnAccount.toTextTR(MyTextStyle.gilroyLight(color: cLightText, size: 14)),
               const SizedBox(width: 5),
               GestureDetector(
-                onTap: showSignUp,
-                child: LKeys.signUp.toTextTR(MyTextStyle.gilroySemiBold(color: cBlack, size: 14)),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: showForgot,
-                child: LKeys.forgotPassword.toTextTR(MyTextStyle.gilroySemiBold(color: cBlack, size: 14)),
+                onTap: showSignIn,
+                child: LKeys.signIn.toTextTR(MyTextStyle.gilroySemiBold(color: cBlack, size: 14)),
               ),
             ],
           )
@@ -225,14 +247,20 @@ class _SignInWithEmailScreenState extends State<SignInWithEmailScreen> with Sing
     );
   }
 
-  Widget signUpView() {
+  Widget resetOtpView() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Enter the 6-digit OTP sent to your email, then set a new password.',
+            style: MyTextStyle.gilroyLight(color: cLightText, size: 14),
+          ),
+          const SizedBox(height: 10),
           MyTextField(controller: emailController, placeHolder: LKeys.email),
           const SizedBox(height: 12),
-          MyTextField(controller: fullNameController, placeHolder: LKeys.fullName),
+          MyTextField(controller: fullNameController, placeHolder: 'OTP Code'),
           const SizedBox(height: 12),
           SecureTextField(
             controller: passwordController,
@@ -244,64 +272,85 @@ class _SignInWithEmailScreenState extends State<SignInWithEmailScreen> with Sing
             placeHolder: LKeys.confirmPassword,
           ),
           EmailButton(
-            text: LKeys.register.tr,
-            isDisable: fullNameController.text.isEmpty || emailController.text.isEmpty || passwordController.text.isEmpty || confirmPasswordController.text.isEmpty,
-            onTap: () async {
-              if (baseController.isLoading.value) {
-                return;
-              }
-              baseController.startLoading();
-              if (passwordController.text != confirmPasswordController.text) {
-                baseController.showSnackBar(LKeys.passwordMismatched.tr, type: SnackBarType.error);
-                return;
-              }
-
-              try {
-                UserCredential cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-                  email: emailController.text,
-                  password: passwordController.text,
-                );
-
-                await cred.user?.sendEmailVerification();
-                UserService.shared.registration(
-                  name: fullNameController.text,
-                  identity: emailController.text,
-                  deviceToken: "deviceToken",
-                  loginType: LoginType.email,
-                  completion: (p0) {
-                    baseController.stopLoading();
-                    baseController.showSnackBar(LKeys.verificationLinkSent.tr, type: SnackBarType.success);
+              text: 'Set New Password',
+              isDisable: emailController.text.isEmpty ||
+                  fullNameController.text.isEmpty ||
+                  passwordController.text.isEmpty ||
+                  confirmPasswordController.text.isEmpty,
+              onTap: () async {
+                if (passwordController.text != confirmPasswordController.text) {
+                  baseController.showSnackBar(
+                    LKeys.passwordMismatched.tr,
+                    type: SnackBarType.error,
+                  );
+                  return;
+                }
+                baseController.startLoading();
+                try {
+                  final result = await UserService.shared.resetPasswordRequest(
+                    email: emailController.text,
+                    otp: fullNameController.text,
+                    password: passwordController.text,
+                    passwordConfirmation: confirmPasswordController.text,
+                  );
+                  baseController.stopLoading();
+                  if (result.status == true) {
+                    baseController.showSnackBar(
+                      result.message ?? 'Password reset successfully.',
+                      type: SnackBarType.success,
+                    );
                     setState(() {
                       type = EmailSignInType.signIn;
+                      fullNameController.clear();
+                      passwordController.clear();
+                      confirmPasswordController.clear();
                     });
-                  },
-                );
-              } on FirebaseAuthException catch (e) {
-                baseController.stopLoading();
-                baseController.showSnackBar(e.message ?? '', type: SnackBarType.error);
-              } catch (e) {
-                print(e);
-              }
-            },
-          ),
+                  } else {
+                    baseController.showSnackBar(
+                      result.message ?? 'Could not reset password. Please try again.',
+                      type: SnackBarType.error,
+                    );
+                  }
+                } catch (e) {
+                  baseController.stopLoading();
+                  baseController.showSnackBar(
+                    'Network error. Please check your connection.',
+                    type: SnackBarType.error,
+                  );
+                }
+              }),
           Row(
             children: [
-              LKeys.iHaveAnAccount.toTextTR(MyTextStyle.gilroyLight(color: cLightText, size: 14)),
-              const SizedBox(width: 5),
               GestureDetector(
-                onTap: showSignIn,
-                child: LKeys.signIn.toTextTR(MyTextStyle.gilroySemiBold(color: cBlack, size: 14)),
+                onTap: () {
+                  setState(() {
+                    type = EmailSignInType.forgot;
+                  });
+                },
+                child: Text(
+                  'Resend OTP',
+                  style: MyTextStyle.gilroySemiBold(color: cPrimary, size: 14),
+                ),
               ),
               const Spacer(),
               GestureDetector(
-                onTap: showForgot,
-                child: LKeys.forgotPassword.toTextTR(MyTextStyle.gilroySemiBold(color: cBlack, size: 14)),
+                onTap: showSignIn,
+                child: LKeys.signIn.toTextTR(MyTextStyle.gilroySemiBold(color: cBlack, size: 14)),
               ),
             ],
           )
         ],
       ),
     );
+  }
+
+  // signUpView is kept for reference but never shown — showSignUp() redirects
+  // directly to CuiRegistrationScreen. Firebase createUserWithEmailAndPassword
+  // is removed because CUI users register via Laravel/MySQL admin-approval flow.
+  Widget signUpView() {
+    // This view is unreachable — showSignUp() navigates to CuiRegistrationScreen.
+    // Kept as a no-op to satisfy the switch statement.
+    return const SizedBox.shrink();
   }
 
   void showSignIn() {
@@ -355,7 +404,7 @@ class EmailButton extends StatelessWidget {
   }
 }
 
-enum EmailSignInType { signIn, signUp, forgot }
+enum EmailSignInType { signIn, signUp, forgot, resetOtp }
 
 class SecureTextField extends StatefulWidget {
   final String placeHolder;

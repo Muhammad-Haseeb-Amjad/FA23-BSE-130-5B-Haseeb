@@ -488,4 +488,122 @@ class RegistrationController extends Controller
             Log::error('Rejection email failed: ' . $throwable->getMessage());
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // FORGOT PASSWORD — step 1: generate OTP and send to email
+    // ─────────────────────────────────────────────────────────────────────────
+    public function forgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => $validator->errors()->first()]);
+        }
+
+        $email = strtolower(trim($request->email));
+
+        // Find approved user (case-insensitive)
+        $user = User::whereRaw('LOWER(email) = ?', [$email])
+            ->orWhereRaw('LOWER(identity) = ?', [$email])
+            ->first();
+
+        if (!$user) {
+            return response()->json(['status' => false, 'message' => 'No account found with this email address.']);
+        }
+
+        $approvalStatus = strtolower($user->approval_status ?? 'approved');
+        if ($approvalStatus === 'pending') {
+            return response()->json(['status' => false, 'message' => 'Your account is pending admin approval. You cannot reset your password yet.']);
+        }
+        if ($approvalStatus === 'rejected' || $approvalStatus === 'cancelled') {
+            return response()->json(['status' => false, 'message' => 'Your account is not active. Please contact admin.']);
+        }
+
+        // Generate 6-digit OTP
+        $otp = (string) random_int(100000, 999999);
+        $user->otp_code = Hash::make($otp);
+        $user->otp_expires_at = now()->addMinutes(15);
+        $user->save();
+
+        Log::info('Password reset OTP generated', [
+            'email' => $email,
+            'expires_at' => $user->otp_expires_at->toDateTimeString(),
+        ]);
+
+        // Send OTP email
+        try {
+            Mail::raw(
+                "Hello {$user->full_name},\n\nYour password reset OTP is: {$otp}\n\nThis OTP is valid for 15 minutes.\n\nIf you did not request this, please ignore this email.\n\nRegards,\nCUI Chatter Team",
+                function ($message) use ($user) {
+                    $message->to($user->email ?? $user->identity)
+                        ->subject('CUI Chatter — Password Reset OTP');
+                }
+            );
+        } catch (\Throwable $throwable) {
+            Log::error('Password reset email failed: ' . $throwable->getMessage());
+            // Still return success — OTP is stored, user can try again or contact admin
+        }
+
+        $response = [
+            'status' => true,
+            'message' => 'A password reset OTP has been sent to your email address.',
+        ];
+
+        // Expose OTP in debug mode only (never in production)
+        if (config('app.debug')) {
+            $response['otp'] = $otp;
+        }
+
+        return response()->json($response);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // RESET PASSWORD — step 2: verify OTP and set new password
+    // ─────────────────────────────────────────────────────────────────────────
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email'    => 'required|email',
+            'otp'      => 'required|digits:6',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => $validator->errors()->first()]);
+        }
+
+        $email = strtolower(trim($request->email));
+
+        $user = User::whereRaw('LOWER(email) = ?', [$email])
+            ->orWhereRaw('LOWER(identity) = ?', [$email])
+            ->first();
+
+        if (!$user) {
+            return response()->json(['status' => false, 'message' => 'No account found with this email address.']);
+        }
+
+        if (!$user->otp_code || !$user->otp_expires_at) {
+            return response()->json(['status' => false, 'message' => 'No password reset was requested. Please request a new OTP.']);
+        }
+
+        if ($user->otp_expires_at->isPast()) {
+            return response()->json(['status' => false, 'message' => 'OTP has expired. Please request a new one.']);
+        }
+
+        if (!Hash::check($request->otp, $user->otp_code)) {
+            return response()->json(['status' => false, 'message' => 'Invalid OTP. Please check and try again.']);
+        }
+
+        // OTP valid — update password and clear OTP
+        $user->password = Hash::make($request->password);
+        $user->otp_code = null;
+        $user->otp_expires_at = null;
+        $user->save();
+
+        Log::info('Password reset successful', ['email' => $email]);
+
+        return response()->json(['status' => true, 'message' => 'Password reset successfully. You can now sign in with your new password.']);
+    }
 }

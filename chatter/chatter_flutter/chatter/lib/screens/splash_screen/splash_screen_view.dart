@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:untitled/common/extensions/image_extension.dart';
 import 'package:untitled/screens/splash_screen/splash_controller.dart';
-import 'package:untitled/utilities/const.dart';
 
-import '../extra_views/logo_tag.dart';
-
+// Second splash screen (Flutter-level):
+// - Background: pure black
+// - Logo: logo_white (207x205px PNG — high resolution, no blur)
+// - The native Android splash shows a plain #00113a background before this.
 class SplashScreenView extends StatelessWidget {
   const SplashScreenView({Key? key}) : super(key: key);
 
@@ -12,14 +14,12 @@ class SplashScreenView extends StatelessWidget {
   Widget build(BuildContext context) {
     final _ = Get.put(SplashController());
     return Scaffold(
-      body: Container(
-        color: cBlack,
-        width: double.infinity,
-        height: double.infinity,
-        alignment: Alignment.center,
-        child: LogoTag(
-          isWhite: true,
-          width: Get.width / 2,
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Image.asset(
+          MyImages.logoWhite,
+          width: 180,
+          fit: BoxFit.contain,
         ),
       ),
     );

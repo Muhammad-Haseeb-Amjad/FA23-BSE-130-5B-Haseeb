@@ -66,8 +66,8 @@
                             <tr>
                                 <th style="width: 100px"> {{ __('userImage') }}</th>
                                 <th> {{ __('fullname') }} </th>
-                                <th> {{ __('username') }} </th>
-                                <th> {{ __('deviceType') }} </th>
+                                <th> Username </th>
+                                <th> Device </th>
                                 <th style="text-align: right; width: 350px;">{{ __('action') }}</th>
                             </tr>
                         </thead>
@@ -90,8 +90,8 @@
                             <tr>
                                 <th style="width: 100px"> {{ __('userImage') }}</th>
                                 <th> {{ __('fullname') }} </th>
-                                <th> {{ __('username') }} </th>
-                                <th> {{ __('deviceType') }} </th>
+                                <th> Username </th>
+                                <th> Device </th>
                                 <th style="text-align: right; width: 350px;">{{ __('action') }}</th>
                             </tr>
                         </thead>
@@ -114,9 +114,9 @@
                             <tr>
                                 <th style="width: 100px"> {{ __('userImage') }}</th>
                                 <th> {{ __('fullname') }} </th>
-                                <th> {{ __('username') }} </th>
-                                <th> {{ __('deviceType') }} </th>
-                                <th> {{ __('moderator') }} </th>
+                                <th> Username </th>
+                                <th> Device </th>
+                                <th> Moderator </th>
                                 <th style="text-align: right; width: 350px;">{{ __('action') }}</th>
                             </tr>
                         </thead>

@@ -18,9 +18,9 @@
     <!-- Custom style CSS -->
     <link rel="stylesheet" href="{{ asset('asset/css/loginPage.css') }}">
     <meta name="theme-color" content="#00113a">
-    <link rel="icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
-    <link rel="shortcut icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
-    <link rel="apple-touch-icon" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
+    <link rel="icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2">
+    <link rel="apple-touch-icon" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2">
 </head>
 
 
@@ -33,7 +33,10 @@
                 <div class="img-full-box" style="background-image: url(./asset/img/login.jpg)">
                     <div class="center-title-text">
                         <div class="bottom-blur-inner">
-                            <h1 class="main-title font-70 gil-heavy"> {!! Session::get('app_name') !!} </h1>
+                            <img src="{{ asset('asset/image/logo_white.png') }}"
+                                 alt="CUI_CHAT"
+                                 class="admin-login-logo"
+                                 style="max-width:260px;width:70%;height:auto;object-fit:contain;display:block;margin:0 auto 18px;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.35));">
                             <div class="width-c-50">
                                 <p class="m-0 font-20 text-contant gil-reg">
                                     Always be there, <br> even when you're far away.

@@ -137,7 +137,18 @@ class UserController extends Controller
         $data = [];
         foreach ($result as $item) {
             $role = $item->role_type ? ucfirst($item->role_type) : '-';
-            $status = $item->approval_status ? ucfirst($item->approval_status) : 'Approved';
+            $rawStatus = $item->approval_status ?? 'approved';
+            $statusBadgeClass = match(strtolower($rawStatus)) {
+                'approved'  => 'success',
+                'pending'   => 'warning',
+                'rejected'  => 'danger',
+                'cancelled' => 'secondary',
+                default     => 'secondary',
+            };
+            $status = '<span class="badge bg-' . $statusBadgeClass . '">' . ucfirst($rawStatus) . '</span>';
+            if ($item->is_block == 1) {
+                $status .= ' <span class="badge bg-dark">Blocked</span>';
+            }
             $registrationNumber = $item->role_type === 'student' ? ($item->registration_number ?: '-') : '-';
              
             if ($item->is_verified == 2 || $item->is_verified == 3) {
@@ -691,6 +702,62 @@ class UserController extends Controller
             'message' => 'Post Delete Successfully',
         ]);
        
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // EMAIL + PASSWORD LOGIN — for CUI-registered users stored in MySQL
+    // ─────────────────────────────────────────────────────────────────────────
+    public function loginWithEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email'        => 'required|email',
+            'password'     => 'required|string',
+            'device_type'  => 'required',
+            'device_token' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => $validator->errors()->first()]);
+        }
+
+        $email = strtolower(trim($request->email));
+
+        // Find user by email or identity (case-insensitive)
+        $user = User::whereRaw('LOWER(email) = ?', [$email])
+            ->orWhereRaw('LOWER(identity) = ?', [$email])
+            ->first();
+
+        if (!$user) {
+            return response()->json(['status' => false, 'message' => 'Invalid email or password.']);
+        }
+
+        // Check approval status first
+        $blocked = $this->approvalBlockedResponse($user);
+        if ($blocked) {
+            return $blocked;
+        }
+
+        // Verify password — only for users who registered via email (login_type = 2)
+        // Social login users (Google/Apple) have no password in DB
+        if ($user->login_type == 2) {
+            if (empty($user->password) || !Hash::check($request->password, $user->password)) {
+                return response()->json(['status' => false, 'message' => 'Invalid email or password.']);
+            }
+        }
+
+        // Update device info
+        $user->device_type  = (int) $request->device_type;
+        $user->device_token = $request->device_token;
+        if (empty($user->approval_status)) {
+            $user->approval_status = 'approved';
+        }
+        $user->save();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Login Successfully.',
+            'data'    => $this->profilePayload($user, true),
+        ]);
     }
 
     public function addUser(Request $request)

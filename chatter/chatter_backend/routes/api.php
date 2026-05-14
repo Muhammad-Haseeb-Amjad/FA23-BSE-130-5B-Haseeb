@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Route;
 
 // Route::post('fetchUserList', [UserController::class, 'fetchUserList'])->middleware('checkHeader');
 Route::post('addUser', [UserController::class, 'addUser'])->middleware('checkHeader');
+Route::post('loginWithEmail', [UserController::class, 'loginWithEmail'])->middleware('checkHeader');
 Route::post('sendRegisterOtp', [RegistrationController::class, 'sendRegisterOtp'])->middleware('checkHeader');
 Route::post('verifyRegisterOtp', [RegistrationController::class, 'verifyRegisterOtp'])->middleware('checkHeader');
 Route::post('register', [RegistrationController::class, 'register'])->middleware('checkHeader');
@@ -145,3 +146,6 @@ Route::post('fetchFAQs', [FAQsController::class, 'fetchFAQs'])->middleware('chec
 
 
 Route::post('test', [PostController::class, 'test'])->middleware('checkHeader');
+
+Route::post('forgotPassword', [RegistrationController::class, 'forgotPassword'])->middleware('checkHeader');
+Route::post('resetPassword', [RegistrationController::class, 'resetPassword'])->middleware('checkHeader');

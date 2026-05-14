@@ -13,9 +13,16 @@ class LoginController extends Controller
 
     function login()
     {
-        $setting = Setting::first();
-        if ($setting) {
-            Session::put('app_name', $setting->app_name);
+        try {
+            $setting = Setting::first();
+            if ($setting) {
+                Session::put('app_name', $setting->app_name);
+            }
+        } catch (\Exception $e) {
+            // DB unavailable — proceed with default app name so login page still renders
+            if (!Session::has('app_name')) {
+                Session::put('app_name', 'CUI_CHAT');
+            }
         }
 
         // If already logged in, go straight to dashboard

@@ -10,6 +10,9 @@ class WebService {
   static const String sendRegisterOtp = "${apiURL}sendRegisterOtp";
   static const String verifyRegisterOtp = "${apiURL}verifyRegisterOtp";
   static const String register = "${apiURL}register";
+  static const String forgotPassword = "${apiURL}forgotPassword";
+  static const String resetPassword = "${apiURL}resetPassword";
+  static const String loginWithEmail = "${apiURL}loginWithEmail";
 
   static const String fetchPosts = "${apiURL}fetchPosts";
   static const String likePost = "${apiURL}likePost";

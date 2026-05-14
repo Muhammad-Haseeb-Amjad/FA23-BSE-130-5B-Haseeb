@@ -19,9 +19,9 @@
     <link href="{{ asset('asset/css/bootstrap.min.css') }}" rel="stylesheet">
 
     <meta name="theme-color" content="#00113a">
-    <link rel="icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
-    <link rel="shortcut icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
-    <link rel="apple-touch-icon" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
+    <link rel="icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2">
+    <link rel="apple-touch-icon" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-logo2">
 
     <link href="{{ asset('asset/bundles/codemirror/lib/codemirror.css') }}" rel="stylesheet">
     <link href="{{ asset('asset/bundles/codemirror/theme/duotone-dark.css') }} " rel="stylesheet">
@@ -78,8 +78,11 @@
             <div class="main-sidebar sidebar-style-2">
                 <aside id="sidebar-wrapper">
                     <div class="sidebar-brand" id="reloadContentLogo">
-                        <a href="{{ route('index') }}">
-                            <span class="logo-name">{!! Session::get('app_name') !!}</span>
+                        <a href="{{ route('index') }}" style="display:flex;align-items:center;padding:12px 20px;text-decoration:none;">
+                            <img src="{{ asset('asset/image/logo_black.png') }}"
+                                 alt="CUI_CHAT"
+                                 class="admin-brand-logo"
+                                 style="max-width:150px;width:auto;height:42px;object-fit:contain;display:block;">
                         </a>
                     </div>
                     <ul class="sidebar-menu">
