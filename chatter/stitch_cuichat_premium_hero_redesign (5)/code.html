@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CUICHAT | The Official COMSATS Network</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-bright": "#f9f9ff",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed-dim": "#00dddd",
+                    "secondary-container": "#b96cfd",
+                    "tertiary-container": "#002e2e",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed-variant": "#2a4386",
+                    "surface-container-highest": "#d4e3ff",
+                    "secondary": "#8333c6",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-primary": "#b3c5ff",
+                    "inverse-on-surface": "#ebf1ff",
+                    "surface": "#f9f9ff",
+                    "on-primary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "background": "#00113a",
+                    "primary-fixed": "#dbe1ff",
+                    "on-surface": "#001c3a",
+                    "outline-variant": "#c5c6d2",
+                    "on-primary-fixed": "#00174a",
+                    "on-tertiary-container": "#00a0a0",
+                    "on-surface-variant": "#444650",
+                    "surface-dim": "#c6dbff",
+                    "primary-fixed-dim": "#b3c5ff",
+                    "surface-variant": "#d4e3ff",
+                    "on-secondary-fixed-variant": "#690bac",
+                    "on-secondary-container": "#41006f",
+                    "on-secondary": "#ffffff",
+                    "surface-container-low": "#eff3ff",
+                    "primary": "#00113a",
+                    "secondary-fixed-dim": "#dfb7ff",
+                    "error-container": "#ffdad6",
+                    "on-error": "#ffffff",
+                    "on-background": "#f9f9ff",
+                    "surface-container": "#e6eeff",
+                    "surface-container-high": "#dde9ff",
+                    "surface-tint": "#435b9f",
+                    "on-tertiary-fixed-variant": "#004f4f",
+                    "tertiary-fixed": "#00fbfb",
+                    "tertiary": "#001717",
+                    "on-secondary-fixed": "#2d004f",
+                    "on-primary-container": "#758dd5",
+                    "inverse-surface": "#163152",
+                    "secondary-fixed": "#f1daff",
+                    "outline": "#757682",
+                    "on-tertiary-fixed": "#002020",
+                    "primary-container": "#002366"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "48px",
+                    "container-max": "1280px",
+                    "gutter": "24px",
+                    "md": "16px",
+                    "unit": "4px",
+                    "xs": "4px",
+                    "margin-mobile": "16px",
+                    "lg": "24px",
+                    "xxl": "64px",
+                    "sm": "8px",
+                    "xl": "40px"
+            },
+            "fontFamily": {
+                    "headline-xl": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "body-lg": ["Manrope"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "label-md": ["Manrope"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-sm": ["Manrope"],
+                    "body-md": ["Manrope"],
+                    "headline-sm": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-xl": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .glass-card {
+        background: rgba(0, 35, 102, 0.4);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(224, 231, 255, 0.1);
+      }
+      .glow-border:hover {
+        box-shadow: 0 0 20px rgba(0, 221, 221, 0.2);
+        border-color: rgba(0, 221, 221, 0.5);
+      }
+      .gradient-btn {
+        background: linear-gradient(45deg, #00113a, #8333c6);
+        transition: all 0.3s ease;
+      }
+      .gradient-btn:hover {
+        box-shadow: 0 4px 20px rgba(131, 51, 198, 0.4);
+        transform: translateY(-2px);
+      }
+      .mesh-bg {
+        background: radial-gradient(at 0% 0%, #00113a 0%, transparent 50%),
+                    radial-gradient(at 100% 0%, #002366 0%, transparent 50%),
+                    radial-gradient(at 100% 100%, #163152 0%, transparent 50%),
+                    radial-gradient(at 0% 100%, #001717 0%, transparent 50%);
+      }
+      .timeline-glow {
+        box-shadow: 0 0 15px rgba(0, 221, 221, 0.3);
+      }
+    </style>
+</head>
+<body class="bg-[#00113a] text-on-background font-body-md overflow-x-hidden selection:bg-tertiary-fixed-dim selection:text-on-tertiary-fixed">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-20 bg-white/5 backdrop-blur-2xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,31,63,0.04)]">
+<div class="font-headline-lg text-primary-fixed font-extrabold tracking-tight">CUICHAT</div>
+<div class="hidden md:flex gap-lg items-center">
+<a class="text-secondary-fixed-dim font-bold border-b-2 border-secondary pb-1 font-body-md" href="#">Features</a>
+<a class="text-surface-variant hover:text-secondary-fixed transition-colors duration-300 font-body-md" href="#">Campuses</a>
+<a class="text-surface-variant hover:text-secondary-fixed transition-colors duration-300 font-body-md" href="#">Community</a>
+<a class="text-surface-variant hover:text-secondary-fixed transition-colors duration-300 font-body-md" href="#">Support</a>
+</div>
+<button class="gradient-btn text-white px-lg py-sm rounded-full font-label-md scale-95 active:scale-90 transition-transform">Download App</button>
+</nav>
+<main class="mesh-bg pt-20">
+<!-- Section 1: Why CUICHAT? -->
+<section class="py-xxl px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="text-center mb-xl">
+<span class="inline-block px-md py-xs bg-tertiary-container text-tertiary-fixed-dim rounded-full font-label-md mb-md tracking-widest border border-tertiary-fixed-dim/30 shadow-[0_0_10px_rgba(0,221,221,0.2)]">COMPARISON</span>
+<h2 class="font-headline-xl text-white mb-sm">Why a dedicated COMSATS platform is better?</h2>
+<p class="text-surface-variant max-w-2xl mx-auto font-body-lg">Moving beyond scattered WhatsApp groups into a unified, secure academic ecosystem.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- Comparison Cards Iteration -->
+<script>
+                    const comparisons = [
+                        {title: "Purpose", whatsapp: "Generic Social", cui: "Academic Focus"},
+                        {title: "User Access", whatsapp: "Public/Invite", cui: "Student ID Only"},
+                        {title: "Verification", whatsapp: "None", cui: "CMS Integration"},
+                        {title: "Academic Context", whatsapp: "Chaos", cui: "Organized Feed"},
+                        {title: "Moderation", whatsapp: "Admin Only", cui: "Automated AI"},
+                        {title: "Announcements", whatsapp: "Lost in chat", cui: "Pinned Notices"},
+                        {title: "Resource Sharing", whatsapp: "Expires", cui: "Permanent Cloud"},
+                        {title: "Discovery", whatsapp: "Hidden", cui: "Public Directory"},
+                        {title: "Campus Coverage", whatsapp: "Single Group", cui: "Cross-Campus"},
+                        {title: "Faculty Role", whatsapp: "Rarely Joined", cui: "Mentor Access"},
+                        {title: "Events", whatsapp: "Word of mouth", cui: "Live Calendar"},
+                        {title: "Analytics", whatsapp: "Zero", cui: "Usage Insights"},
+                        {title: "Live Collaboration", whatsapp: "Limited", cui: "Audio Rooms"},
+                        {title: "Safety", whatsapp: "Doxxing Risk", cui: "Encrypted Privacy"},
+                        {title: "Scalability", whatsapp: "1024 Limit", cui: "Unlimited Users"}
+                    ];
+                </script>
+<!-- Manual injection of cards for reliability -->
+<div class="glass-card p-lg rounded-lg border border-white/10 glow-border transition-all duration-300 group">
+<h3 class="text-tertiary-fixed-dim font-headline-sm mb-lg">Academic Discovery</h3>
+<div class="space-y-md">
+<div class="flex items-center gap-md p-md bg-red-500/10 rounded-md border border-red-500/20">
+<span class="material-symbols-outlined text-red-400" data-icon="close">close</span>
+<span class="text-surface-variant text-body-sm">WhatsApp: Groups are hidden and require private links.</span>
+</div>
+<div class="flex items-center gap-md p-md bg-tertiary-container/40 rounded-md border border-tertiary-fixed-dim/30">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" data-icon="check" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check</span>
+<span class="text-white text-body-sm font-semibold">CUICHAT: Discoverable departments and societies easily.</span>
+</div>
+</div>
+</div>
+<div class="glass-card p-lg rounded-lg border border-white/10 glow-border transition-all duration-300 group">
+<h3 class="text-tertiary-fixed-dim font-headline-sm mb-lg">Verification</h3>
+<div class="space-y-md">
+<div class="flex items-center gap-md p-md bg-red-500/10 rounded-md border border-red-500/20">
+<span class="material-symbols-outlined text-red-400" data-icon="person_off">person_off</span>
+<span class="text-surface-variant text-body-sm">WhatsApp: Anyone with a number can join your group.</span>
+</div>
+<div class="flex items-center gap-md p-md bg-tertiary-container/40 rounded-md border border-tertiary-fixed-dim/30">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" data-icon="verified" data-weight="fill" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="text-white text-body-sm font-semibold">CUICHAT: Strictly CMS-verified COMSATS students only.</span>
+</div>
+</div>
+</div>
+<div class="glass-card p-lg rounded-lg border border-white/10 glow-border transition-all duration-300 group">
+<h3 class="text-tertiary-fixed-dim font-headline-sm mb-lg">Resource Longevity</h3>
+<div class="space-y-md">
+<div class="flex items-center gap-md p-md bg-red-500/10 rounded-md border border-red-500/20">
+<span class="material-symbols-outlined text-red-400" data-icon="delete">delete</span>
+<span class="text-surface-variant text-body-sm">WhatsApp: Media expires and is hard to search later.</span>
+</div>
+<div class="flex items-center gap-md p-md bg-tertiary-container/40 rounded-md border border-tertiary-fixed-dim/30">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" data-icon="cloud_done" data-weight="fill" style="font-variation-settings: 'FILL' 1;">cloud_done</span>
+<span class="text-white text-body-sm font-semibold">CUICHAT: Perpetual academic repository per course.</span>
+</div>
+</div>
+</div>
+<!-- 12 more cards would follow this pattern -->
+</div>
+</section>
+<!-- Section 2: Core Platform Features -->
+<section class="py-xxl bg-primary-container/20">
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="text-center mb-xl">
+<h2 class="font-headline-xl text-white mb-sm">Engineered for Excellence</h2>
+<p class="text-surface-variant font-body-lg">Modern features designed specifically for the CUI experience.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Profiles -->
+<div class="glass-card p-xl rounded-lg group hover:-translate-y-2 transition-transform relative overflow-hidden">
+<span class="material-symbols-outlined absolute -bottom-4 -right-4 text-9xl opacity-5 text-tertiary-fixed-dim" data-icon="account_circle">account_circle</span>
+<div class="w-16 h-16 bg-gradient-to-br from-secondary to-primary rounded-2xl flex items-center justify-center mb-lg shadow-[0_0_20px_rgba(131,51,198,0.3)]">
+<span class="material-symbols-outlined text-white text-3xl" data-icon="badge">badge</span>
+</div>
+<h3 class="text-white font-headline-md mb-md">Dynamic Profiles</h3>
+<p class="text-surface-variant text-body-md">Showcase your GPA, skills, and campus activities with official verification badges.</p>
+</div>
+<!-- Audio Rooms -->
+<div class="glass-card p-xl rounded-lg group hover:-translate-y-2 transition-transform relative overflow-hidden border-cyan-500/20">
+<span class="material-symbols-outlined absolute -bottom-4 -right-4 text-9xl opacity-5 text-tertiary-fixed-dim" data-icon="mic">mic</span>
+<div class="w-16 h-16 bg-gradient-to-br from-tertiary-fixed-dim to-secondary rounded-2xl flex items-center justify-center mb-lg shadow-[0_0_20px_rgba(0,221,221,0.3)]">
+<span class="material-symbols-outlined text-white text-3xl" data-icon="spatial_audio_off">spatial_audio_off</span>
+</div>
+<h3 class="text-white font-headline-md mb-md">Live Audio Rooms</h3>
+<p class="text-surface-variant text-body-md">Host department-wide Q&amp;A sessions or study jams with high-fidelity audio.</p>
+</div>
+<!-- Moderation -->
+<div class="glass-card p-xl rounded-lg group hover:-translate-y-2 transition-transform relative overflow-hidden">
+<span class="material-symbols-outlined absolute -bottom-4 -right-4 text-9xl opacity-5 text-tertiary-fixed-dim" data-icon="shield">shield</span>
+<div class="w-16 h-16 bg-gradient-to-br from-secondary to-error rounded-2xl flex items-center justify-center mb-lg shadow-[0_0_20px_rgba(131,51,198,0.3)]">
+<span class="material-symbols-outlined text-white text-3xl" data-icon="gavel">gavel</span>
+</div>
+<h3 class="text-white font-headline-md mb-md">Smart Moderation</h3>
+<p class="text-surface-variant text-body-md">Advanced AI ensuring professional conduct and academic integrity across all feeds.</p>
+</div>
+<!-- More cards placeholder -->
+</div>
+</div>
+</section>
+<!-- Section 3: Unified COMSATS Network -->
+<section class="py-xxl relative">
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+<svg height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
+<circle cx="20%" cy="30%" fill="#00dddd" r="2"></circle>
+<circle cx="80%" cy="40%" fill="#8333c6" r="2"></circle>
+<line stroke="#00dddd" stroke-width="0.5" x1="20%" x2="80%" y1="30%" y2="40%"></line>
+<!-- Visual representation of nodes -->
+</svg>
+</div>
+<div class="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto text-center">
+<span class="inline-block px-md py-xs bg-secondary-container/20 text-secondary-fixed-dim rounded-full font-label-md mb-md border border-secondary/30">NETWORK COVERAGE</span>
+<h2 class="font-headline-xl text-white mb-lg">Connecting 7 Vibrant Campuses</h2>
+<div class="flex flex-wrap justify-center gap-md">
+<div class="glass-card px-xl py-md rounded-full border-tertiary-fixed-dim/30 shadow-[0_0_15px_rgba(0,221,221,0.1)] text-white font-bold hover:scale-105 transition-transform cursor-default">Islamabad</div>
+<div class="glass-card px-xl py-md rounded-full border-secondary/30 text-white font-bold hover:scale-105 transition-transform cursor-default">Lahore</div>
+<div class="glass-card px-xl py-md rounded-full border-tertiary-fixed-dim/30 text-white font-bold hover:scale-105 transition-transform cursor-default">Abbottabad</div>
+<div class="glass-card px-xl py-md rounded-full border-secondary/30 text-white font-bold hover:scale-105 transition-transform cursor-default">Wah</div>
+<div class="glass-card px-xl py-md rounded-full border-tertiary-fixed-dim/30 text-white font-bold hover:scale-105 transition-transform cursor-default">Attock</div>
+<div class="glass-card px-xl py-md rounded-full border-secondary/30 text-white font-bold hover:scale-105 transition-transform cursor-default">Vehari</div>
+<div class="glass-card px-xl py-md rounded-full border-tertiary-fixed-dim/30 text-white font-bold hover:scale-105 transition-transform cursor-default">Sahiwal</div>
+</div>
+</div>
+</section>
+<!-- Section 4: How It Works -->
+<section class="py-xxl px-margin-mobile md:px-margin-desktop bg-surface-container-low/5">
+<div class="max-w-container-max mx-auto">
+<div class="text-center mb-xxl">
+<h2 class="font-headline-xl text-white">Five Steps to Onboarding</h2>
+</div>
+<div class="relative flex flex-col md:flex-row justify-between items-center gap-xl md:gap-0">
+<div class="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-tertiary-fixed-dim via-secondary to-tertiary-fixed-dim hidden md:block opacity-20"></div>
+<!-- Step 1 -->
+<div class="relative z-10 flex flex-col items-center group">
+<div class="w-16 h-16 rounded-full bg-primary border-4 border-tertiary-fixed-dim flex items-center justify-center text-white font-bold text-headline-sm mb-md timeline-glow group-hover:scale-110 transition-transform">1</div>
+<h4 class="text-white font-bold">Register</h4>
+<p class="text-surface-variant text-body-sm text-center max-w-[150px]">Enter your official credentials</p>
+</div>
+<!-- Step 2 -->
+<div class="relative z-10 flex flex-col items-center group">
+<div class="w-16 h-16 rounded-full bg-primary border-4 border-secondary flex items-center justify-center text-white font-bold text-headline-sm mb-md group-hover:scale-110 transition-transform">2</div>
+<h4 class="text-white font-bold">Verify OTP</h4>
+<p class="text-surface-variant text-body-sm text-center max-w-[150px]">Secure your identity via email</p>
+</div>
+<!-- Step 3 -->
+<div class="relative z-10 flex flex-col items-center group">
+<div class="w-16 h-16 rounded-full bg-primary border-4 border-tertiary-fixed-dim flex items-center justify-center text-white font-bold text-headline-sm mb-md group-hover:scale-110 transition-transform">3</div>
+<h4 class="text-white font-bold">Admin Review</h4>
+<p class="text-surface-variant text-body-sm text-center max-w-[150px]">Official verification check</p>
+</div>
+<!-- Step 4 -->
+<div class="relative z-10 flex flex-col items-center group">
+<div class="w-16 h-16 rounded-full bg-primary border-4 border-secondary flex items-center justify-center text-white font-bold text-headline-sm mb-md group-hover:scale-110 transition-transform">4</div>
+<h4 class="text-white font-bold">Approved</h4>
+<p class="text-surface-variant text-body-sm text-center max-w-[150px]">Welcome to the family</p>
+</div>
+<!-- Step 5 -->
+<div class="relative z-10 flex flex-col items-center group">
+<div class="w-16 h-16 rounded-full bg-gradient-to-br from-tertiary-fixed-dim to-secondary flex items-center justify-center text-white font-bold text-headline-sm mb-md timeline-glow group-hover:scale-110 transition-transform">5</div>
+<h4 class="text-white font-bold">Connect</h4>
+<p class="text-surface-variant text-body-sm text-center max-w-[150px]">Start your CUI journey</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 5: Verified Community Management -->
+<section class="py-xxl px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-xxl items-center">
+<div>
+<h2 class="font-headline-xl text-white mb-lg">Unified Management Ecosystem</h2>
+<ul class="space-y-lg mb-xl">
+<li class="flex items-center gap-md group">
+<div class="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center border border-tertiary-fixed-dim/30">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" data-icon="check">check</span>
+</div>
+<span class="text-white text-body-lg">Complete User Life-cycle Management</span>
+</li>
+<li class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center border border-tertiary-fixed-dim/30">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" data-icon="check">check</span>
+</div>
+<span class="text-white text-body-lg">Automated Multi-tier Content Moderation</span>
+</li>
+<li class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center border border-tertiary-fixed-dim/30">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" data-icon="check">check</span>
+</div>
+<span class="text-white text-body-lg">Frictionless Registration Workflow</span>
+</li>
+<li class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center border border-tertiary-fixed-dim/30">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" data-icon="check">check</span>
+</div>
+<span class="text-white text-body-lg">Real-time Advanced Engagement Analytics</span>
+</li>
+</ul>
+<button class="gradient-btn text-white px-xl py-md rounded-full font-bold">Discover Features</button>
+</div>
+<div class="grid grid-cols-2 gap-lg">
+<div class="glass-card p-xl rounded-lg text-center border-white/5">
+<div class="text-headline-xl font-extrabold text-tertiary-fixed-dim mb-xs">15K+</div>
+<div class="text-surface-variant font-label-md uppercase tracking-widest">Active Users</div>
+</div>
+<div class="glass-card p-xl rounded-lg text-center border-white/5">
+<div class="text-headline-xl font-extrabold text-secondary-fixed-dim mb-xs">120+</div>
+<div class="text-surface-variant font-label-md uppercase tracking-widest">Daily Requests</div>
+</div>
+<div class="glass-card p-xl rounded-lg text-center border-white/5">
+<div class="text-headline-xl font-extrabold text-white mb-xs">7</div>
+<div class="text-surface-variant font-label-md uppercase tracking-widest">Campuses</div>
+</div>
+<div class="glass-card p-xl rounded-lg text-center border-white/5">
+<div class="text-headline-xl font-extrabold text-tertiary-fixed-dim mb-xs">98%</div>
+<div class="text-surface-variant font-label-md uppercase tracking-widest">User Trust</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 6: Premium Features Roadmap -->
+<section class="py-xxl px-margin-mobile md:px-margin-desktop">
+<div class="text-center mb-xl">
+<h2 class="font-headline-xl text-white">Innovation Roadmap</h2>
+<p class="text-surface-variant font-body-lg">What's coming next in the CUICHAT universe.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-md">
+<!-- Roadmap Cards -->
+<div class="glass-card p-lg rounded-lg border-secondary/20 hover:border-secondary transition-colors relative h-full">
+<span class="absolute top-2 right-2 text-[10px] px-2 py-0.5 bg-secondary text-white rounded-full">ROADMAP</span>
+<h4 class="text-white font-bold mb-md">Video Calling</h4>
+<p class="text-surface-variant text-body-sm">Peer-to-peer encrypted high-definition video conferencing.</p>
+</div>
+<div class="glass-card p-lg rounded-lg border-secondary/20 hover:border-secondary transition-colors relative h-full">
+<span class="absolute top-2 right-2 text-[10px] px-2 py-0.5 bg-secondary text-white rounded-full">ROADMAP</span>
+<h4 class="text-white font-bold mb-md">AI Recommendations</h4>
+<p class="text-surface-variant text-body-sm">Smart study partners based on your major and skills.</p>
+</div>
+<div class="glass-card p-lg rounded-lg border-secondary/20 hover:border-secondary transition-colors relative h-full">
+<span class="absolute top-2 right-2 text-[10px] px-2 py-0.5 bg-secondary text-white rounded-full">ROADMAP</span>
+<h4 class="text-white font-bold mb-md">LMS Integration</h4>
+<p class="text-surface-variant text-body-sm">Direct sync with CUI Learning Management System.</p>
+</div>
+<div class="glass-card p-lg rounded-lg border-secondary/20 hover:border-secondary transition-colors relative h-full">
+<span class="absolute top-2 right-2 text-[10px] px-2 py-0.5 bg-secondary text-white rounded-full">ROADMAP</span>
+<h4 class="text-white font-bold mb-md">Web Version</h4>
+<p class="text-surface-variant text-body-sm">A full desktop experience for research and projects.</p>
+</div>
+<div class="glass-card p-lg rounded-lg border-secondary/20 hover:border-secondary transition-colors relative h-full">
+<span class="absolute top-2 right-2 text-[10px] px-2 py-0.5 bg-secondary text-white rounded-full">ROADMAP</span>
+<h4 class="text-white font-bold mb-md">Attendance Sync</h4>
+<p class="text-surface-variant text-body-sm">Live notifications for your class attendance status.</p>
+</div>
+<!-- More cards can be added here -->
+</div>
+</section>
+<!-- Section 7: FAQ'S -->
+<section class="py-xxl px-margin-mobile md:px-margin-desktop max-w-3xl mx-auto">
+<h2 class="font-headline-xl text-white text-center mb-xl">Curious?</h2>
+<div class="space-y-md">
+<div class="glass-card rounded-lg overflow-hidden border-white/5">
+<button class="w-full p-lg flex justify-between items-center text-left text-white font-bold focus:bg-white/5 transition-colors">
+                        Is CUICHAT officially part of COMSATS?
+                        <span class="material-symbols-outlined" data-icon="expand_more">expand_more</span>
+</button>
+<div class="px-lg pb-lg text-surface-variant text-body-md">
+                        CUICHAT is an independently developed platform specifically architected for the COMSATS University ecosystem to solve communication gaps.
+                    </div>
+</div>
+<div class="glass-card rounded-lg overflow-hidden border-white/5">
+<button class="w-full p-lg flex justify-between items-center text-left text-white font-bold focus:bg-white/5 transition-colors">
+                        How do you verify student identity?
+                        <span class="material-symbols-outlined" data-icon="expand_more">expand_more</span>
+</button>
+<div class="px-lg pb-lg text-surface-variant text-body-md">
+                        We use a dual-layer verification process involving CUI student email verification and administrative manual approval to ensure a clean community.
+                    </div>
+</div>
+<div class="glass-card rounded-lg overflow-hidden border-white/5">
+<button class="w-full p-lg flex justify-between items-center text-left text-white font-bold focus:bg-white/5 transition-colors">
+                        Can students from different campuses interact?
+                        <span class="material-symbols-outlined" data-icon="expand_more">expand_more</span>
+</button>
+<div class="px-lg pb-lg text-surface-variant text-body-md">
+                        Absolutely. CUICHAT breaks campus silos, allowing Islamabad, Lahore, and other campus students to collaborate on projects and events.
+                    </div>
+</div>
+</div>
+</section>
+<!-- Section 8: The Visionaries -->
+<section class="py-xxl px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto text-center">
+<h2 class="font-headline-xl text-white mb-xl">The Minds Behind CUICHAT</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-xxl">
+<!-- Team Member 1 -->
+<div class="flex flex-col items-center">
+<div class="relative mb-lg group">
+<div class="absolute -inset-2 bg-gradient-to-r from-tertiary-fixed-dim to-secondary rounded-full blur opacity-40 group-hover:opacity-100 transition duration-500"></div>
+<img class="relative w-40 h-40 rounded-full object-cover border-4 border-primary" data-alt="A professional portrait of a young male software architect with a focused expression, wearing a minimalist dark shirt. The background is a sophisticated tech-oriented workspace with soft blue ambient lighting and glass panels. The overall aesthetic is clean, modern, and prestigious, aligning with the premium dark SaaS theme of the platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD56IJfm5q027eFW8PHYi_T_bRwMIsxwc565zzMY-lJNSvz4mI2jDWTXNiRet2OlehyaEY4XO7amBTN1K18x6-rabTtMxBeHPx_DYrAT-DMQeYc6Ler7IToTVrr4xl5oY87DtcZYIFU9Douf93DIHhy3dowQoKIF0FoGlG55_suc9WWaPVxjMyaPfMMZJIbsw7R-4zrGmmimWbA8xOzjmb7depTpdfikulckwYp5nUOHeDqWcpnCfbUl1g3edZu20c7csyb2D9eUw"/>
+</div>
+<h4 class="text-white font-headline-md">M Abdullah</h4>
+<span class="px-md py-xs bg-secondary/20 text-secondary-fixed-dim rounded-full font-label-md mt-sm">Team Leader</span>
+</div>
+<!-- Team Member 2 -->
+<div class="flex flex-col items-center">
+<div class="relative mb-lg group">
+<div class="absolute -inset-2 bg-gradient-to-r from-secondary to-tertiary-fixed-dim rounded-full blur opacity-40 group-hover:opacity-100 transition duration-500"></div>
+<img class="relative w-40 h-40 rounded-full object-cover border-4 border-primary" data-alt="A portrait of a young male lead developer with a friendly smile, set in a modern high-key studio environment. The lighting is soft and professional, highlighting a clean-shaven face and contemporary hairstyle. The image captures a sense of innovation and digital expertise with a palette of deep blues and vibrant cyan accents, perfectly matching the design system's visual identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_LZsQI5_CNpV5xZTLjBZtKrQfGq4AP3NGK5n7V_wTYy4GBY9qJ9byC7hmWICbymck17PPC25muFGfvgroy8kfCWJ8Qhf3DzVx9TWqZgd31q0y7e-LISF3F8p5UCWiqtlJH7u3UQtz_haw6-0lleOu35bPz7DDqpTDmKOAKfdRxvGiUQarw_2GnYZQwTQFwq94iOWHSBkkjS78sPOOshG90t3sE4AgPGfrCggwlUb1_9OSt5535CPhfbyI1gbRyrEcCu7TE015NA"/>
+</div>
+<h4 class="text-white font-headline-md">Muhammad Haseeb Amjad</h4>
+<span class="px-md py-xs bg-tertiary-container text-tertiary-fixed-dim rounded-full font-label-md mt-sm">Developer</span>
+</div>
+<!-- Team Member 3 -->
+<div class="flex flex-col items-center">
+<div class="relative mb-lg group">
+<div class="absolute -inset-2 bg-gradient-to-r from-tertiary-fixed-dim to-primary-container rounded-full blur opacity-40 group-hover:opacity-100 transition duration-500"></div>
+<img class="relative w-40 h-40 rounded-full object-cover border-4 border-primary" data-alt="A sharp, professional portrait of a young backend developer looking confidently into the camera. The setting is a minimalist tech hub with sleek glass partitions and soft purple neon lighting in the background. The visual style is premium and cinematic, emphasizing the prestigious academic community feel while maintaining a cutting-edge technological vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3wS5IVmUT96pg1SEhQQOjcj3vSEls0oTTWxvOqNcMvbrDAnkA90iUV1Tbcnp_a-0q0QukrSkLe3N6FZuWs_3I-r8Fe5p4VhEOvuSyxnFgTiXwcXS0DLsrHOYrTXcGgRCu7r0QRniDuqP3LrR8aQXw5bNdxtc_mXZZ8QsqoTAadHOFbFNVbmElv-Pft0kr2HVRLfx-muHp6AMJ3QDzFkvGbjSdU2GHCKT838H1hmehddizbE9ORdSJXQBdzE40rdXnuku9kJNa1g"/>
+</div>
+<h4 class="text-white font-headline-md">Sanawar Ali</h4>
+<span class="px-md py-xs bg-tertiary-container text-tertiary-fixed-dim rounded-full font-label-md mt-sm">Developer</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-xxl px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-md bg-primary-container border-t border-white/10 relative">
+<div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-tertiary-fixed-dim to-transparent opacity-50"></div>
+<div class="flex flex-col items-center md:items-start">
+<div class="font-headline-sm text-primary-fixed-dim font-bold mb-sm">CUICHAT</div>
+<p class="text-surface-variant font-body-sm text-center md:text-left max-w-xs">Powered for COMSATS University Islamabad. Building the future of campus connectivity.</p>
+</div>
+<div class="flex gap-lg">
+<a class="text-surface-variant hover:text-secondary transition-colors font-body-sm" href="#">Privacy Policy</a>
+<a class="text-surface-variant hover:text-secondary transition-colors font-body-sm" href="#">Terms of Service</a>
+<a class="text-surface-variant hover:text-secondary transition-colors font-body-sm" href="#">Campus Directory</a>
+<a class="text-surface-variant hover:text-secondary transition-colors font-body-sm" href="#">Support</a>
+</div>
+<div class="text-surface-variant font-body-sm">
+            © 2026 CUICHAT. Connecting COMSATS Excellence.
+        </div>
+</footer>
+</body></html>

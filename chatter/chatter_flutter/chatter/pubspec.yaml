@@ -104,7 +104,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/images/cuichat-logo.png
-  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_background: "#00113a"
   adaptive_icon_foreground: assets/images/cuichat-logo.png
 
 # The following section is specific to Flutter packages.

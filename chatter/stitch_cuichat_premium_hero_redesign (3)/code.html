@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#f9f9ff",
+                        "outline": "#757682",
+                        "on-tertiary-fixed": "#002020",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#00dddd",
+                        "surface": "#f9f9ff",
+                        "secondary-fixed-dim": "#dfb7ff",
+                        "on-secondary-fixed-variant": "#690bac",
+                        "on-background": "#001c3a",
+                        "outline-variant": "#c5c6d2",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#001717",
+                        "on-surface": "#001c3a",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#dbe1ff",
+                        "on-primary-fixed-variant": "#2a4386",
+                        "surface-container-high": "#dde9ff",
+                        "primary": "#00113a",
+                        "surface-container": "#e6eeff",
+                        "primary-container": "#002366",
+                        "secondary": "#8333c6",
+                        "inverse-surface": "#163152",
+                        "secondary-container": "#b96cfd",
+                        "inverse-on-surface": "#ebf1ff",
+                        "secondary-fixed": "#f1daff",
+                        "primary-fixed-dim": "#b3c5ff",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#002e2e",
+                        "tertiary-fixed": "#00fbfb",
+                        "inverse-primary": "#b3c5ff",
+                        "on-primary-container": "#758dd5",
+                        "on-primary-fixed": "#00174a",
+                        "on-secondary-fixed": "#2d004f",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#00a0a0",
+                        "surface-variant": "#d4e3ff",
+                        "background": "#f9f9ff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#c6dbff",
+                        "surface-container-low": "#eff3ff",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#d4e3ff",
+                        "on-tertiary-fixed-variant": "#004f4f",
+                        "on-surface-variant": "#444650",
+                        "surface-tint": "#435b9f",
+                        "on-secondary-container": "#41006f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xxl": "64px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "container-max": "1280px",
+                        "xl": "40px",
+                        "unit": "4px",
+                        "xs": "4px",
+                        "gutter": "24px",
+                        "margin-desktop": "48px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Manrope"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-md": ["Manrope"],
+                        "headline-xl": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Manrope"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-sm": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-xl": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(0, 17, 58, 0.6);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(0, 251, 251, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(0, 251, 251, 0.4);
+            box-shadow: 0 0 30px rgba(0, 251, 251, 0.15), 0 0 60px rgba(131, 51, 198, 0.1);
+        }
+        .icon-gradient {
+            background: linear-gradient(135deg, #00113a 0%, #8333c6 100%);
+        }
+        .mesh-gradient-bg {
+            background: radial-gradient(circle at 20% 30%, #00113a 0%, transparent 50%),
+                        radial-gradient(circle at 80% 70%, #435b9f 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, #002366 0%, #00113a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .glow-blob {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: rgba(0, 251, 251, 0.08);
+            filter: blur(100px);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        .watermark-icon {
+            position: absolute;
+            right: -20px;
+            bottom: -20px;
+            font-size: 120px !important;
+            opacity: 0.03;
+            transform: rotate(-15deg);
+            pointer-events: none;
+        }
+        .header-underline {
+            height: 4px;
+            width: 80px;
+            background: linear-gradient(90deg, #00fbfb, transparent);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-primary selection:bg-tertiary-fixed selection:text-primary">
+<section class="mesh-gradient-bg min-h-screen py-xxl px-margin-mobile md:px-margin-desktop relative">
+<!-- Glow Blobs -->
+<div class="glow-blob top-[-100px] left-[-100px]"></div>
+<div class="glow-blob bottom-[-100px] right-[-100px]" style="background: rgba(131, 51, 198, 0.1);"></div>
+<div class="max-w-container-max mx-auto relative z-10">
+<!-- Header Section -->
+<div class="flex flex-col items-center text-center mb-xxl space-y-md">
+<div class="inline-flex items-center px-lg py-sm rounded-full bg-white/5 backdrop-blur-xl border border-tertiary-fixed/30 shadow-[0_0_20px_rgba(0,251,251,0.2)]">
+<span class="font-label-md text-label-md text-tertiary-fixed tracking-[0.2em]">PLATFORM FEATURES</span>
+</div>
+<div class="space-y-xs">
+<h2 class="font-headline-xl text-headline-xl text-white">Core Platform Features</h2>
+<div class="header-underline mx-auto"></div>
+</div>
+</div>
+<!-- Features Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- Card 1: Profiles -->
+<div class="glass-card p-xl rounded-lg flex flex-col relative overflow-hidden">
+<span class="material-symbols-outlined watermark-icon">account_circle</span>
+<div class="icon-gradient w-14 h-14 rounded-lg flex items-center justify-center mb-lg shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="account_circle">account_circle</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white mb-md">Profiles</h3>
+<p class="font-body-md text-body-md text-surface-variant/80">Comprehensive student and faculty profiles highlighting skills, research, and campus status.</p>
+</div>
+<!-- Card 2: Connectivity -->
+<div class="glass-card p-xl rounded-lg flex flex-col relative overflow-hidden">
+<span class="material-symbols-outlined watermark-icon">hub</span>
+<div class="icon-gradient w-14 h-14 rounded-lg flex items-center justify-center mb-lg shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="hub">hub</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white mb-md">Connectivity</h3>
+<p class="font-body-md text-body-md text-surface-variant/80">Seamless real-time messaging and collaborative groups across all COMSATS locations.</p>
+</div>
+<!-- Card 3: Registration Approval -->
+<div class="glass-card p-xl rounded-lg flex flex-col relative overflow-hidden">
+<span class="material-symbols-outlined watermark-icon">verified_user</span>
+<div class="icon-gradient w-14 h-14 rounded-lg flex items-center justify-center mb-lg shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="verified_user">verified_user</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white mb-md">Registration Approval</h3>
+<p class="font-body-md text-body-md text-surface-variant/80">Automated vetting combined with manual admin oversight for ironclad platform security.</p>
+</div>
+<!-- Card 4: Interests -->
+<div class="glass-card p-xl rounded-lg flex flex-col relative overflow-hidden">
+<span class="material-symbols-outlined watermark-icon">psychology</span>
+<div class="icon-gradient w-14 h-14 rounded-lg flex items-center justify-center mb-lg shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="psychology">psychology</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white mb-md">Interests</h3>
+<p class="font-body-md text-body-md text-surface-variant/80">Algorithm-based suggestions to connect you with peers who share your academic passions.</p>
+</div>
+<!-- Card 5: Posts & Reels -->
+<div class="glass-card p-xl rounded-lg flex flex-col relative overflow-hidden">
+<span class="material-symbols-outlined watermark-icon">auto_awesome_motion</span>
+<div class="icon-gradient w-14 h-14 rounded-lg flex items-center justify-center mb-lg shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="auto_awesome_motion">auto_awesome_motion</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white mb-md">Posts &amp; Reels</h3>
+<p class="font-body-md text-body-md text-surface-variant/80">Share campus life moments and academic breakthroughs through rich media feeds and short clips.</p>
+</div>
+<!-- Card 6: Live Audio Rooms -->
+<div class="glass-card p-xl rounded-lg flex flex-col relative overflow-hidden">
+<span class="material-symbols-outlined watermark-icon">mic_external_on</span>
+<div class="icon-gradient w-14 h-14 rounded-lg flex items-center justify-center mb-lg shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="mic_external_on">mic_external_on</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white mb-md">Live Audio Rooms</h3>
+<p class="font-body-md text-body-md text-surface-variant/80">Join real-time study sessions, FYP discussions, and faculty-led Q&amp;A sessions.</p>
+</div>
+<!-- Card 7: Moderation -->
+<div class="glass-card p-xl rounded-lg flex flex-col relative overflow-hidden">
+<span class="material-symbols-outlined watermark-icon">gavel</span>
+<div class="icon-gradient w-14 h-14 rounded-lg flex items-center justify-center mb-lg shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="gavel">gavel</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white mb-md">Moderation</h3>
+<p class="font-body-md text-body-md text-surface-variant/80">Advanced moderation tools ensure the platform remains a safe space for professional growth.</p>
+</div>
+<!-- Card 8: Push Notifications -->
+<div class="glass-card p-xl rounded-lg flex flex-col relative overflow-hidden">
+<span class="material-symbols-outlined watermark-icon">notifications_active</span>
+<div class="icon-gradient w-14 h-14 rounded-lg flex items-center justify-center mb-lg shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="notifications_active">notifications_active</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white mb-md">Push Notifications</h3>
+<p class="font-body-md text-body-md text-surface-variant/80">Stay updated with campus announcements, messages, and activity alerts in real time.</p>
+</div>
+<!-- Card 9: Stories -->
+<div class="glass-card p-xl rounded-lg flex flex-col relative overflow-hidden">
+<span class="material-symbols-outlined watermark-icon">history_toggle_off</span>
+<div class="icon-gradient w-14 h-14 rounded-lg flex items-center justify-center mb-lg shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="history_toggle_off">history_toggle_off</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white mb-md">Stories</h3>
+<p class="font-body-md text-body-md text-surface-variant/80">Share 24-hour campus moments and updates with your university network.</p>
+</div>
+</div>
+</div>
+</section>
+</body></html>

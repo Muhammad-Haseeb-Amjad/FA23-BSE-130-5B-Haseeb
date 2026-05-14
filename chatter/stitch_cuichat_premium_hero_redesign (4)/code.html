@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#c6dbff",
+                    "surface-container-low": "#eff3ff",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#d4e3ff",
+                    "on-tertiary-fixed-variant": "#004f4f",
+                    "on-surface-variant": "#444650",
+                    "surface-tint": "#435b9f",
+                    "on-secondary-container": "#41006f",
+                    "tertiary-container": "#002e2e",
+                    "tertiary-fixed": "#00fbfb",
+                    "inverse-primary": "#b3c5ff",
+                    "on-primary-container": "#758dd5",
+                    "on-primary-fixed": "#00174a",
+                    "on-secondary-fixed": "#2d004f",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#00a0a0",
+                    "surface-variant": "#d4e3ff",
+                    "background": "#f9f9ff",
+                    "tertiary": "#001717",
+                    "on-surface": "#001c3a",
+                    "on-error-container": "#93000a",
+                    "on-primary": "#ffffff",
+                    "primary-fixed": "#dbe1ff",
+                    "on-primary-fixed-variant": "#2a4386",
+                    "surface-container-high": "#dde9ff",
+                    "primary": "#00113a",
+                    "surface-container": "#e6eeff",
+                    "primary-container": "#002366",
+                    "secondary": "#8333c6",
+                    "inverse-surface": "#163152",
+                    "secondary-container": "#b96cfd",
+                    "inverse-on-surface": "#ebf1ff",
+                    "secondary-fixed": "#f1daff",
+                    "primary-fixed-dim": "#b3c5ff",
+                    "on-secondary": "#ffffff",
+                    "surface-bright": "#f9f9ff",
+                    "outline": "#757682",
+                    "on-tertiary-fixed": "#002020",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#00dddd",
+                    "surface": "#f9f9ff",
+                    "secondary-fixed-dim": "#dfb7ff",
+                    "on-secondary-fixed-variant": "#690bac",
+                    "on-background": "#001c3a",
+                    "outline-variant": "#c5c6d2",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "container-max": "1280px",
+                    "xxl": "64px",
+                    "sm": "8px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "margin-desktop": "48px",
+                    "xs": "4px",
+                    "gutter": "24px",
+                    "xl": "40px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "label-md": ["Manrope"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "body-md": ["Manrope"],
+                    "headline-sm": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-sm": ["Manrope"],
+                    "headline-xl": ["Plus Jakarta Sans"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-lg": ["Manrope"]
+            },
+            "fontSize": {
+                    "label-md": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "headline-xl": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .mesh-bg {
+            background-color: #020b2d;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(131, 51, 198, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(0, 221, 221, 0.1) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(0, 35, 102, 0.3) 0px, transparent 50%);
+        }
+        .network-grid {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .hub-glow {
+            box-shadow: 0 0 50px rgba(0, 221, 221, 0.2);
+        }
+        .node-line {
+            background: linear-gradient(90deg, transparent, rgba(0, 221, 221, 0.3), transparent);
+        }
+    </style>
+</head>
+<body class="bg-primary overflow-x-hidden">
+<section class="relative min-h-screen mesh-bg py-xxl px-margin-mobile md:px-margin-desktop flex flex-col items-center justify-center overflow-hidden">
+<!-- Background Patterns -->
+<div class="absolute inset-0 network-grid opacity-30 pointer-events-none"></div>
+<!-- Decorative Glows -->
+<div class="absolute top-1/4 -left-20 w-[500px] h-[500px] bg-secondary/10 blur-[120px] rounded-full pointer-events-none"></div>
+<div class="absolute bottom-1/4 -right-20 w-[600px] h-[600px] bg-tertiary-fixed-dim/5 blur-[150px] rounded-full pointer-events-none"></div>
+<!-- Header Content -->
+<div class="relative z-10 text-center max-w-3xl mx-auto mb-xxl">
+<div class="inline-flex items-center px-lg py-sm rounded-full glass-card border border-white/10 mb-lg">
+<span class="text-tertiary-fixed-dim font-label-md text-label-md tracking-widest uppercase">NETWORK COVERAGE</span>
+<div class="ml-sm w-2 h-2 rounded-full bg-tertiary-fixed-dim shadow-[0_0_8px_#00dddd]"></div>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-white mb-md">
+                Unified <span class="bg-clip-text text-transparent bg-gradient-to-r from-tertiary-fixed-dim to-secondary-container">COMSATS Network</span>
+</h1>
+<p class="font-body-lg text-body-lg text-surface-variant/80 max-w-xl mx-auto">
+                Connecting seven vibrant campuses into one digital family.
+            </p>
+</div>
+<!-- Network Visualization -->
+<div class="relative z-10 w-full max-w-container-max flex flex-col items-center justify-center">
+<!-- Mobile Layout (Stacked/Wrapped Nodes) -->
+<div class="md:hidden flex flex-wrap justify-center gap-md w-full">
+<!-- Central Hub Mobile -->
+<div class="w-full flex justify-center mb-lg">
+<div class="glass-card hub-glow rounded-xl p-lg flex flex-col items-center text-center border-tertiary-fixed-dim/30">
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center mb-md border border-tertiary-fixed-dim/20">
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-4xl" data-icon="language">language</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-white">CUICHAT Network</h3>
+</div>
+</div>
+<!-- Campus Nodes Mobile -->
+<div class="grid grid-cols-2 gap-sm w-full">
+<div class="glass-card rounded-lg p-md text-center border-white/5"><span class="font-label-md text-label-md text-white">Islamabad</span></div>
+<div class="glass-card rounded-lg p-md text-center border-white/5"><span class="font-label-md text-label-md text-white">Lahore</span></div>
+<div class="glass-card rounded-lg p-md text-center border-white/5"><span class="font-label-md text-label-md text-white">Abbottabad</span></div>
+<div class="glass-card rounded-lg p-md text-center border-white/5"><span class="font-label-md text-label-md text-white">Wah</span></div>
+<div class="glass-card rounded-lg p-md text-center border-white/5"><span class="font-label-md text-label-md text-white">Attock</span></div>
+<div class="glass-card rounded-lg p-md text-center border-white/5"><span class="font-label-md text-label-md text-white">Vehari</span></div>
+<div class="glass-card rounded-lg p-md text-center border-white/5 col-span-2"><span class="font-label-md text-label-md text-white">Sahiwal</span></div>
+</div>
+</div>
+<!-- Desktop Layout (Radial-ish Network) -->
+<div class="hidden md:block relative w-full h-[600px]">
+<!-- Central Hub -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+<div class="glass-card hub-glow rounded-xl p-xl flex flex-col items-center text-center border-tertiary-fixed-dim/40 w-80 transform hover:scale-105 transition-transform duration-500 cursor-pointer">
+<div class="w-24 h-24 rounded-full bg-primary-container/50 flex items-center justify-center mb-lg border-2 border-tertiary-fixed-dim/30 shadow-[0_0_30px_rgba(0,221,221,0.1)]">
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-5xl" data-icon="hub">hub</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-white mb-xs">CUICHAT Network</h3>
+<p class="font-label-md text-label-md text-tertiary-fixed-dim/70 uppercase tracking-tighter">Global Central Core</p>
+</div>
+</div>
+<!-- Connection Lines (SVG) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none opacity-20" preserveaspectratio="none">
+<line stroke="url(#cyan-grad)" stroke-width="2" x1="50%" x2="15%" y1="50%" y2="20%"></line>
+<line stroke="url(#cyan-grad)" stroke-width="2" x1="50%" x2="85%" y1="50%" y2="20%"></line>
+<line stroke="url(#cyan-grad)" stroke-width="2" x1="50%" x2="10%" y1="50%" y2="50%"></line>
+<line stroke="url(#cyan-grad)" stroke-width="2" x1="50%" x2="90%" y1="50%" y2="50%"></line>
+<line stroke="url(#cyan-grad)" stroke-width="2" x1="50%" x2="20%" y1="50%" y2="80%"></line>
+<line stroke="url(#cyan-grad)" stroke-width="2" x1="50%" x2="50%" y1="50%" y2="90%"></line>
+<line stroke="url(#cyan-grad)" stroke-width="2" x1="50%" x2="80%" y1="50%" y2="80%"></line>
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="cyan-grad">
+<stop offset="0%" stop-color="#00dddd"></stop>
+<stop offset="100%" stop-color="#8333c6"></stop>
+</lineargradient>
+</defs>
+</svg>
+<!-- Campus Nodes Desktop -->
+<!-- Islamabad (Top Left) -->
+<div class="absolute top-[15%] left-[10%] group">
+<div class="glass-card rounded-full px-xl py-md border-white/10 hover:border-tertiary-fixed-dim/50 hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-2 cursor-default flex items-center gap-md">
+<div class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></div>
+<span class="font-headline-sm text-headline-sm text-white">Islamabad</span>
+</div>
+</div>
+<!-- Lahore (Top Right) -->
+<div class="absolute top-[15%] right-[10%] group">
+<div class="glass-card rounded-full px-xl py-md border-white/10 hover:border-secondary-container/50 hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-2 cursor-default flex items-center gap-md">
+<div class="w-2 h-2 rounded-full bg-secondary-container"></div>
+<span class="font-headline-sm text-headline-sm text-white">Lahore</span>
+</div>
+</div>
+<!-- Abbottabad (Left Center) -->
+<div class="absolute top-[48%] left-[0%] group">
+<div class="glass-card rounded-full px-xl py-md border-white/10 hover:border-tertiary-fixed-dim/50 hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-2 cursor-default flex items-center gap-md">
+<div class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></div>
+<span class="font-headline-sm text-headline-sm text-white">Abbottabad</span>
+</div>
+</div>
+<!-- Wah (Right Center) -->
+<div class="absolute top-[48%] right-[0%] group">
+<div class="glass-card rounded-full px-xl py-md border-white/10 hover:border-secondary-container/50 hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-2 cursor-default flex items-center gap-md">
+<div class="w-2 h-2 rounded-full bg-secondary-container"></div>
+<span class="font-headline-sm text-headline-sm text-white">Wah</span>
+</div>
+</div>
+<!-- Attock (Bottom Left) -->
+<div class="absolute bottom-[10%] left-[15%] group">
+<div class="glass-card rounded-full px-xl py-md border-white/10 hover:border-tertiary-fixed-dim/50 hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-2 cursor-default flex items-center gap-md">
+<div class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></div>
+<span class="font-headline-sm text-headline-sm text-white">Attock</span>
+</div>
+</div>
+<!-- Vehari (Bottom Center) -->
+<div class="absolute bottom-[0%] left-1/2 -translate-x-1/2 group">
+<div class="glass-card rounded-full px-xl py-md border-white/10 hover:border-secondary-container/50 hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-2 cursor-default flex items-center gap-md">
+<div class="w-2 h-2 rounded-full bg-secondary-container"></div>
+<span class="font-headline-sm text-headline-sm text-white">Vehari</span>
+</div>
+</div>
+<!-- Sahiwal (Bottom Right) -->
+<div class="absolute bottom-[10%] right-[15%] group">
+<div class="glass-card rounded-full px-xl py-md border-white/10 hover:border-tertiary-fixed-dim/50 hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-2 cursor-default flex items-center gap-md">
+<div class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></div>
+<span class="font-headline-sm text-headline-sm text-white">Sahiwal</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Particle Elements -->
+<div class="absolute top-[10%] right-[20%] w-1 h-1 bg-white rounded-full opacity-40 shadow-[0_0_10px_white]"></div>
+<div class="absolute bottom-[20%] left-[10%] w-1.5 h-1.5 bg-tertiary-fixed-dim rounded-full opacity-60 shadow-[0_0_15px_#00dddd]"></div>
+<div class="absolute top-[40%] left-[5%] w-1 h-1 bg-secondary-container rounded-full opacity-50 shadow-[0_0_12px_#b96cfd]"></div>
+</section>
+</body></html>

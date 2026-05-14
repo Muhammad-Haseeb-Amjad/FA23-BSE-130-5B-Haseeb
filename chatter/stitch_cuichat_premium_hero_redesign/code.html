@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CUICHAT | Redesigning Campus Connectivity</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        }
+        .premium-aurora {
+            background-color: #00113a;
+            background-image: 
+                radial-gradient(at 0% 0%, #00113a 0px, transparent 50%),
+                radial-gradient(at 50% 0%, rgba(131, 51, 198, 0.2) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, #002366 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(185, 108, 253, 0.15) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(0, 251, 251, 0.1) 0px, transparent 50%);
+            position: relative;
+            overflow: hidden;
+        }
+        .premium-aurora::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        .btn-premium-gradient {
+            background: linear-gradient(135deg, #8333c6 0%, #435b9f 100%);
+            box-shadow: 0 0 20px rgba(131, 51, 198, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-premium-gradient:hover {
+            box-shadow: 0 0 30px rgba(131, 51, 198, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px) scale(1.02);
+        }
+        .glow-pill {
+            background: rgba(0, 251, 251, 0.1);
+            border: 1px solid rgba(0, 251, 251, 0.3);
+            box-shadow: 0 0 15px rgba(0, 251, 251, 0.15);
+            text-shadow: 0 0 8px rgba(0, 251, 251, 0.5);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        .header-glass {
+            background: rgba(0, 17, 58, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #00fbfb;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#c6dbff",
+                    "surface-variant": "#d4e3ff",
+                    "on-secondary-container": "#41006f",
+                    "surface-container-highest": "#d4e3ff",
+                    "on-tertiary-container": "#00a0a0",
+                    "primary-fixed-dim": "#b3c5ff",
+                    "on-surface-variant": "#444650",
+                    "on-primary-container": "#758dd5",
+                    "surface-container-lowest": "#ffffff",
+                    "background": "#f9f9ff",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#002e2e",
+                    "on-tertiary-fixed-variant": "#004f4f",
+                    "tertiary": "#001717",
+                    "primary-fixed": "#dbe1ff",
+                    "on-primary": "#ffffff",
+                    "surface": "#f9f9ff",
+                    "surface-container": "#e6eeff",
+                    "inverse-on-surface": "#ebf1ff",
+                    "secondary": "#8333c6",
+                    "surface-bright": "#f9f9ff",
+                    "tertiary-fixed": "#00fbfb",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "secondary-container": "#b96cfd",
+                    "outline-variant": "#c5c6d2",
+                    "on-surface": "#001c3a",
+                    "inverse-primary": "#b3c5ff",
+                    "on-secondary-fixed": "#2d004f",
+                    "on-background": "#001c3a",
+                    "outline": "#757682",
+                    "inverse-surface": "#163152",
+                    "tertiary-fixed-dim": "#00dddd",
+                    "on-tertiary-fixed": "#002020",
+                    "surface-container-high": "#dde9ff",
+                    "on-secondary-fixed-variant": "#690bac",
+                    "surface-container-low": "#eff3ff",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#2a4386",
+                    "primary-container": "#002366",
+                    "secondary-fixed-dim": "#dfb7ff",
+                    "surface-tint": "#435b9f",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed": "#00174a",
+                    "secondary-fixed": "#f1daff",
+                    "primary": "#00113a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1280px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "gutter": "24px",
+                    "xxl": "64px",
+                    "md": "16px",
+                    "unit": "4px",
+                    "xl": "40px",
+                    "xs": "4px",
+                    "margin-desktop": "48px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "body-md": ["Manrope"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "headline-sm": ["Plus Jakarta Sans"],
+                    "body-lg": ["Manrope"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "label-md": ["Manrope"],
+                    "body-sm": ["Manrope"],
+                    "headline-xl": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "headline-xl": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-[#00113a] font-body-md text-white overflow-x-hidden">
+<!-- Section 1: Navigation -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-20 header-glass">
+<div class="flex items-center gap-sm">
+<img alt="CUICHAT Logo" class="h-10 w-auto filter brightness-0 invert" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsYr16nwDa6rvOSBcGDxeissJBwCaxKFkPMwTBE0kcCNUZjlNS1E8bf6W43R-YQMWPvFiaPKbNH-y1xBiUMw8aihyI-FloMvKOOIGtPQ9wBwi1SqxPYOfUMh7RUzLi6MYlVd5tnMDMoXw3HbNQzAt6E0Anjz3rvSxg3-VCp_KYH8LTMDdgMsyB-bmttS8KD6v9iDGg6lV86Iwiy97hxViaiyq7V6PR2DRTjtivXsOlvJIMTV7rSVqprdOY4XXjzfhxTQpxqmMxeA"/>
+<span class="font-headline-lg text-white font-extrabold tracking-tight">CUICHAT</span>
+</div>
+<div class="hidden lg:flex items-center gap-xl">
+<a class="nav-link text-[#00fbfb] font-bold" href="#">Home</a>
+<a class="nav-link text-white/80 hover:text-white" href="#">Why CUICHAT</a>
+<a class="nav-link text-white/80 hover:text-white" href="#">Features</a>
+<a class="nav-link text-white/80 hover:text-white" href="#">Campuses</a>
+<a class="nav-link text-white/80 hover:text-white" href="#">FAQ’s</a>
+<a class="nav-link text-white/80 hover:text-white" href="#">About</a>
+</div>
+<div class="flex items-center gap-md">
+<button class="hidden md:block btn-premium-gradient text-white px-lg py-sm rounded-full font-label-md active:scale-95 transition-all">
+                Download App
+            </button>
+<button class="lg:hidden text-white p-xs">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</nav>
+<!-- Section 2: Hero Section -->
+<main class="relative min-h-screen pt-40 pb-xxl px-margin-mobile md:px-margin-desktop premium-aurora">
+<!-- Blurred Glow Blobs -->
+<div class="absolute top-[-10%] right-[10%] w-[50vw] h-[50vw] bg-[#8333c6]/20 blur-[120px] rounded-full pointer-events-none animate-pulse"></div>
+<div class="absolute bottom-[0%] left-[-5%] w-[40vw] h-[40vw] bg-[#00fbfb]/10 blur-[150px] rounded-full pointer-events-none"></div>
+<div class="max-w-container-max mx-auto grid grid-cols-1 lg:grid-cols-12 gap-xl items-center relative z-10">
+<!-- Left Column: Content -->
+<div class="lg:col-span-6 flex flex-col items-start gap-lg">
+<div class="inline-flex items-center gap-sm px-md py-xs glow-pill rounded-full">
+<span class="material-symbols-outlined text-[#00fbfb] text-[18px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-label-md text-[#00fbfb] tracking-widest uppercase font-bold">Official COMSATS Social Network</span>
+</div>
+<h1 class="font-headline-xl text-white max-w-[15ch] leading-[1.1]">
+                    CUICHAT <br/>
+<span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00fbfb] via-[#dfb7ff] to-[#8333c6]">Connect COMSATS Campuses</span>
+</h1>
+<p class="font-body-lg text-white/70 max-w-[48ch] leading-relaxed">
+                    Elevate your university experience with a verified digital ecosystem built for COMSATS. Collaborate across seven campuses, discover vibrant student life, and build a network that lasts a lifetime.
+                </p>
+<div class="flex flex-wrap items-center gap-md pt-sm">
+<button class="btn-premium-gradient text-white px-xl py-md rounded-full font-headline-sm flex items-center gap-sm group">
+                        Download App
+                        <span class="material-symbols-outlined group-hover:translate-y-1 transition-transform">download</span>
+</button>
+<button class="glass-card text-white px-xl py-md rounded-full font-headline-sm flex items-center gap-sm border-white/20 hover:bg-white/10 transition-all">
+                        Why CUICHAT?
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<div class="flex flex-wrap gap-md mt-lg">
+<div class="flex items-center gap-xs px-md py-sm glass-card rounded-xl text-white/90">
+<span class="material-symbols-outlined text-[#00fbfb] text-[22px]">verified_user</span>
+<span class="font-label-md font-semibold">Verified Access</span>
+</div>
+<div class="flex items-center gap-xs px-md py-sm glass-card rounded-xl text-white/90">
+<span class="material-symbols-outlined text-[#00fbfb] text-[22px]">security</span>
+<span class="font-label-md font-semibold">Admin Approved</span>
+</div>
+<div class="flex items-center gap-xs px-md py-sm glass-card rounded-xl text-white/90">
+<span class="material-symbols-outlined text-[#00fbfb] text-[22px]">corporate_fare</span>
+<span class="font-label-md font-semibold">7 Campuses</span>
+</div>
+</div>
+</div>
+<!-- Right Column: Visuals -->
+<div class="lg:col-span-6 relative flex justify-center lg:justify-end">
+<!-- Phone Mockup -->
+<div class="relative w-[320px] md:w-[380px] aspect-[9/18.5] bg-[#00113a] rounded-[3.5rem] p-[10px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] border-[2px] border-white/20">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-black rounded-b-[1.5rem] z-30"></div>
+<!-- App Content Area -->
+<div class="relative w-full h-full bg-white rounded-[2.8rem] overflow-hidden">
+<!-- App UI -->
+<div class="p-6 pt-12 flex flex-col gap-6 h-full overflow-y-auto bg-[#f9f9ff]">
+<!-- Top Header -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full ring-2 ring-[#8333c6] ring-offset-2 overflow-hidden shadow-md">
+<img alt="Student Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoo4L1Div_D6z9wyYZEsEMLx832amxBYd538i1V2RCfN3HcrOK6gChSKhQATF6zSc3P6gpRy5I6BJzx-8lj83lEOkUShwC8NMrp8lKbZwsQi0nSjPvLSv-yDzxjFnS4pc5CmwRWenzG-mwYaJSY-q4YSeKolUQgHyy1Iwh2fhiurp-R-vESyloMbh9gMW0lTwjC5d2bYUJe55JnbkXioC_RkqDyltsm326h_GEmnzjSF6d1CPtzG71PgFEJlJm08Pcvs9Ge-Glzg"/>
+</div>
+<div>
+<h4 class="font-headline-sm text-primary text-[16px] leading-tight">Ahmad Khan</h4>
+<span class="text-[10px] text-secondary font-bold tracking-tight px-1.5 py-0.5 bg-secondary/10 rounded">COMPUTER SCIENCE</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary/40">notifications</span>
+</div>
+<!-- Tabs -->
+<div class="flex gap-6 border-b border-surface-variant">
+<div class="pb-2 border-b-2 border-secondary text-secondary font-bold text-[13px]">Feed</div>
+<div class="pb-2 text-on-surface-variant/50 text-[13px] font-medium">Events</div>
+<div class="pb-2 text-on-surface-variant/50 text-[13px] font-medium">Clubs</div>
+</div>
+<!-- Post 1 -->
+<div class="bg-white rounded-2xl p-4 shadow-sm border border-black/5 flex flex-col gap-3">
+<div class="flex items-center justify-between text-[11px] text-gray-400">
+<span class="font-bold text-secondary">Islamabad Campus</span>
+<span>Just now</span>
+</div>
+<p class="text-[13px] text-on-surface leading-snug">Successfully hosted the first Flutter workshop! Thanks to everyone who joined today 🚀</p>
+<div class="h-40 rounded-xl overflow-hidden shadow-inner">
+<img alt="Campus Event" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSFcKJJc7CqXE2jZh5FZYXor5EJVkPLdFrrlHAwNUZm-df0LESJ1DZbppMFIHux3JnvzgJKf0tsAspSRrXwiWJMObxf5XjlHVt6bbU-xx2vC89jZycOkfT1n1sV3ffYGUqz99nLqFN-cw5XtdCv-BT0pu_KMum73-kaw8LeWNhSbCP9YjK_inQwDLAiCpQDWv7P_3JNenhrNBaD1LUs-bJNmihRs5RfBjsONi-P9cq1arht-EBh5vvOPaTZMVkTQ6BPBM_TktMyg"/>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-error text-[18px]">favorite</span><span class="text-[11px] font-bold text-on-surface">124</span></div>
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-primary/40 text-[18px]">chat_bubble</span><span class="text-[11px] font-bold text-on-surface">12</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Elements -->
+<div class="absolute -left-12 top-20 glass-card p-4 rounded-2xl shadow-2xl floating flex items-center gap-3 z-40 border-white/20" style="animation-delay: 0s;">
+<div class="w-10 h-10 rounded-full bg-[#00fbfb]/20 flex items-center justify-center border border-[#00fbfb]/30">
+<span class="material-symbols-outlined text-[#00fbfb] text-[24px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<span class="font-headline-sm text-[14px] text-white">Verified Student</span>
+</div>
+<div class="absolute -right-8 top-1/4 glass-card p-4 rounded-2xl shadow-2xl floating flex items-center gap-3 z-40 border-white/20" style="animation-delay: 1.5s;">
+<div class="w-10 h-10 rounded-full bg-secondary/30 flex items-center justify-center border border-secondary/40">
+<span class="material-symbols-outlined text-white text-[24px]">mark_chat_unread</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-[14px] text-white">12 new messages</span>
+<span class="text-[10px] text-white/50">Inbox Activity</span>
+</div>
+</div>
+<div class="absolute -left-16 bottom-1/4 glass-card p-4 rounded-2xl shadow-2xl floating flex items-center gap-3 z-40 border-white/20" style="animation-delay: 0.8s;">
+<div class="w-10 h-10 rounded-full bg-error/30 flex items-center justify-center border border-error/40">
+<span class="material-symbols-outlined text-white text-[24px]" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+</div>
+<span class="font-headline-sm text-[14px] text-white">3 Notifications</span>
+</div>
+<div class="absolute right-0 bottom-[15%] translate-x-1/2 glass-card p-4 rounded-2xl shadow-2xl floating flex flex-col gap-2 z-40 border-white/20" style="animation-delay: 2.2s;">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-[#00fbfb]/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-[#00fbfb] text-[18px]">group</span>
+</div>
+<span class="font-headline-sm text-[14px] text-white">CS Study Room</span>
+</div>
+<div class="flex -space-x-3 ml-11">
+<div class="w-7 h-7 rounded-full bg-gray-400 border-2 border-[#00113a]"></div>
+<div class="w-7 h-7 rounded-full bg-gray-500 border-2 border-[#00113a]"></div>
+<div class="w-7 h-7 rounded-full bg-secondary border-2 border-[#00113a] flex items-center justify-center text-[10px] font-bold">+8</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-xxl px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-md bg-[#00113a] border-t border-white/5">
+<div class="flex flex-col items-center md:items-start gap-xs">
+<div class="font-headline-sm text-white font-extrabold flex items-center gap-2">
+<img alt="CUICHAT Logo" class="h-6 filter brightness-0 invert" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsYr16nwDa6rvOSBcGDxeissJBwCaxKFkPMwTBE0kcCNUZjlNS1E8bf6W43R-YQMWPvFiaPKbNH-y1xBiUMw8aihyI-FloMvKOOIGtPQ9wBwi1SqxPYOfUMh7RUzLi6MYlVd5tnMDMoXw3HbNQzAt6E0Anjz3rvSxg3-VCp_KYH8LTMDdgMsyB-bmttS8KD6v9iDGg6lV86Iwiy97hxViaiyq7V6PR2DRTjtivXsOlvJIMTV7rSVqprdOY4XXjzfhxTQpxqmMxeA"/>
+        CUICHAT
+    </div>
+<p class="font-body-sm text-white/40 text-center md:text-left">© 2024 CUICHAT. Redefining Digital Campus Connections.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-lg">
+<a class="font-body-sm text-white/60 hover:text-[#00fbfb] transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-white/60 hover:text-[#00fbfb] transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-white/60 hover:text-[#00fbfb] transition-colors" href="#">Campus Directory</a>
+<a class="font-body-sm text-white/60 hover:text-[#00fbfb] transition-colors" href="#">Support</a>
+</div>
+</footer>
+</body></html>

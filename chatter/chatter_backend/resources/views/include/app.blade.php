@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta content="width=device-width, initial-scale=1" name="viewport">
-    <title>CUICHAT Admin Panel</title>
+    <title>CUI_CHAT Admin Panel</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <!-- include summernote css/js -->
     <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css" rel="stylesheet">
@@ -19,9 +19,9 @@
     <link href="{{ asset('asset/css/bootstrap.min.css') }}" rel="stylesheet">
 
     <meta name="theme-color" content="#00113a">
-    <link rel="icon" type="image/png" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
-    <link rel="shortcut icon" type="image/png" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
+    <link rel="apple-touch-icon" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
 
     <link href="{{ asset('asset/bundles/codemirror/lib/codemirror.css') }}" rel="stylesheet">
     <link href="{{ asset('asset/bundles/codemirror/theme/duotone-dark.css') }} " rel="stylesheet">

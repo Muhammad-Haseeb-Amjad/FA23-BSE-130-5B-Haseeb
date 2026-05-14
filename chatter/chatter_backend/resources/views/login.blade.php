@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1" name="viewport">
-    <title>CUICHAT Admin Login</title>
-    <meta name="description" content="Secure admin login for CUICHAT, the COMSATS University Islamabad social platform.">
+    <title>CUI_CHAT Admin Login</title>
+    <meta name="description" content="Secure admin login for CUI_CHAT, the COMSATS University Islamabad social platform.">
     <!-- General CSS Files -->
     <link rel="stylesheet" href="{{ asset('asset/css/app.min.css') }}">
     <link rel="stylesheet" href="{{ asset('asset/bundles/bootstrap-social/bootstrap-social.css') }}">
@@ -18,9 +18,9 @@
     <!-- Custom style CSS -->
     <link rel="stylesheet" href="{{ asset('asset/css/loginPage.css') }}">
     <meta name="theme-color" content="#00113a">
-    <link rel="icon" type="image/png" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
-    <link rel="shortcut icon" type="image/png" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('asset/landing/images/cuichat-logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
+    <link rel="apple-touch-icon" href="{{ asset('asset/cuichat-logo.png') }}?v=20260514-2">
 </head>
 
 

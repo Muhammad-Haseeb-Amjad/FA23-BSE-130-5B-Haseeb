@@ -256,6 +256,7 @@ class NotificationCard extends StatelessWidget {
                   MyImages.logo,
                   width: 22,
                   height: 22,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
