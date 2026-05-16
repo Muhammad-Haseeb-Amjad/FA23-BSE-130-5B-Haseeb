@@ -43,13 +43,11 @@ void main() {
 
   setUp(() async {
     isCounterScreenTestMode = true;
-    counterScreenTestOpaqueRect = const Rect.fromLTWH(0, 0, 1, 1); // unit rect — no-op mapping
     StorageService.enableInMemoryBackendForTests();
     await StorageService().resetForTests();
   });
 
   tearDown(() {
-    counterScreenTestOpaqueRect = null;
   });
 
   group('allah_tap_area placement matches expected constants', () {

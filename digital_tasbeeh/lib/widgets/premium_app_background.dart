@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../main.dart'; // To access appSettingsProvider
 
 /// The same premium background used on the splash screen —
 /// radial dark-green gradient + subtle glow + tiled 8-point star pattern.
@@ -20,19 +21,21 @@ class PremiumAppBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Read the current theme
+    final isBlackTheme = appSettingsProvider.theme == 'black';
+    
     return Stack(
       fit: StackFit.expand,
       children: [
         // ── Radial gradient (matches splash) ──────────────────
         Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: RadialGradient(
-              center: Alignment(0, -0.3),
+              center: const Alignment(0, -0.3),
               radius: 1.2,
-              colors: [
-                Color(0xFF123D38),
-                Color(0xFF0B2623),
-              ],
+              colors: isBlackTheme
+                  ? const [Color(0xFF1F1F1F), Color(0xFF000000)]
+                  : const [Color(0xFF123D38), Color(0xFF0B2623)],
             ),
           ),
         ),

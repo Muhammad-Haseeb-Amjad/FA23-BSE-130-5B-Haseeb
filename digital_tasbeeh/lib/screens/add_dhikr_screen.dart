@@ -6,6 +6,8 @@ import '../models/dhikr.dart';
 import '../services/storage_service.dart';
 import '../utils/app_message.dart';
 import '../utils/dhikr_display.dart';
+import '../l10n/app_localizations.dart';
+import '../widgets/premium_app_background.dart';
 
 class AddDhikrScreen extends StatefulWidget {
   final Dhikr? dhikr;
@@ -60,8 +62,9 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
   }
 
   Future<void> _saveDhikr() async {
+    final l10n = AppLocalizations.of(context);
     if (_nameController.text.isEmpty) {
-      showAppMessage(context, 'Please enter a dhikr name', isError: true);
+      showAppMessage(context, l10n.translate('name_cannot_be_empty'), isError: true);
       return;
     }
 
@@ -110,24 +113,25 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
     }
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+    final l10n = AppLocalizations.of(context);
+    return PremiumAppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(l10n),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Name *'),
+                    _buildLabel('${l10n.translate('enter_dhikr_name')} *'),
                     const SizedBox(height: 10),
-                    _buildNameTextField(),
+                    _buildNameTextField(l10n),
                     const SizedBox(height: 25),
                     _buildLabel('Description (Optional)'),
                     const SizedBox(height: 10),
@@ -139,19 +143,20 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
                     const SizedBox(height: 30),
                     _buildCurrentCountSection(),
                     const SizedBox(height: 30),
-                    _buildTargetSection(),
+                    _buildTargetSection(l10n),
                   ],
                 ),
               ),
             ),
-            _buildSaveButton(),
+            _buildSaveButton(l10n),
           ],
         ),
+      ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -162,7 +167,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
           ),
           const SizedBox(width: 10),
           Text(
-            _isEditing ? 'Edit Dhikr' : 'Add New Dhikr',
+            _isEditing ? l10n.translate('edit_dhikr') : l10n.translate('add_new_dhikr'),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
@@ -194,7 +199,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
     );
   }
 
-  Widget _buildNameTextField() {
+  Widget _buildNameTextField(AppLocalizations l10n) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: _nameController,
       builder: (context, value, _) {
@@ -218,7 +223,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
               height: arabic ? 1.4 : null,
             ),
             decoration: InputDecoration(
-              hintText: 'Dhikr name (e.g. SubhanAllah)',
+              hintText: l10n.translate('enter_dhikr_name'),
               hintStyle: TextStyle(
                 color: Colors.white.withOpacity(0.4),
                 fontSize: 16,
@@ -235,7 +240,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
                           : Colors.white.withOpacity(0.5),
                     ),
                     onPressed: _toggleListening,
-                    tooltip: 'Voice input',
+                    tooltip: l10n.translate('speak_dhikr'),
                   ),
                   IconButton(
                     icon: _isScanning
@@ -252,7 +257,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
                             color: Colors.white.withOpacity(0.5),
                           ),
                     onPressed: _isScanning ? null : _scanArabicText,
-                    tooltip: 'Scan Arabic text',
+                    tooltip: l10n.translate('scan_from_image'),
                   ),
                 ],
               ),
@@ -327,7 +332,6 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
             await textRecognizer.processImage(inputImage);
 
         final scannedText = recognizedText.text.trim();
-        debugPrint('OCR RAW TEXT: $scannedText');
 
         if (scannedText.isNotEmpty) {
           setState(() {
@@ -450,7 +454,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
     );
   }
 
-  Widget _buildTargetSection() {
+  Widget _buildTargetSection(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -462,22 +466,18 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Set Target',
-                    style: TextStyle(
+                    l10n.translate('target_count_optional'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  SizedBox(height: 3),
-                  Text(
-                    'Set a daily goal',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
+                  const SizedBox(height: 3),
                 ],
               ),
               Switch(
@@ -531,7 +531,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
     );
   }
 
-  Widget _buildSaveButton() {
+  Widget _buildSaveButton(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: SizedBox(
@@ -552,7 +552,7 @@ class _AddDhikrScreenState extends State<AddDhikrScreen> {
               const Icon(Icons.check, size: 24),
               const SizedBox(width: 10),
               Text(
-                _isEditing ? 'Update Dhikr' : 'Save Dhikr',
+                _isEditing ? l10n.translate('edit_dhikr') : l10n.translate('save_dhikr'),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

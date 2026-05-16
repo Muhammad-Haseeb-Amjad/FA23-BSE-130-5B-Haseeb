@@ -46,13 +46,11 @@ void main() {
 
   setUp(() async {
     isCounterScreenTestMode = true;
-    counterScreenTestOpaqueRect = _testOpaqueRect;
     StorageService.enableInMemoryBackendForTests();
     await StorageService().resetForTests();
   });
 
   tearDown(() {
-    counterScreenTestOpaqueRect = null;
   });
 
   group('Preservation: Save and Replay button positions unchanged', () {

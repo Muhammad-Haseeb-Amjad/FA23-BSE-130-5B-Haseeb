@@ -5,6 +5,9 @@ import 'package:audioplayers/audioplayers.dart';
 import '../models/dhikr.dart';
 import '../services/storage_service.dart';
 import 'settings_screen.dart';
+import '../l10n/app_localizations.dart';
+import '../main.dart';
+import '../widgets/premium_app_background.dart';
 
 class PrayerSequenceScreen extends StatefulWidget {
   const PrayerSequenceScreen({super.key});
@@ -19,7 +22,6 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
   List<Dhikr> _sequence = [];
   int _currentIndex = 0;
   bool _isLoading = true;
-  Map<String, dynamic> _settings = {};
 
   @override
   void initState() {
@@ -34,8 +36,6 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
   }
 
   Future<void> _loadSequence() async {
-    _settings = await _storage.loadSettings();
-
     // Create prayer sequence with fresh counts (independent from My Dhikrs)
     final sequenceDhikrs = [
       Dhikr(
@@ -83,10 +83,10 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
     });
 
     // Haptics and feedback
-    if (_settings['vibration'] == true) {
+    if (appSettingsProvider.vibration) {
       Vibration.vibrate(duration: 50);
     }
-    if (_settings['mute'] != true) {
+    if (!appSettingsProvider.mute) {
       // Play sound when mute is OFF
       await _playClickSound();
     }
@@ -123,7 +123,7 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
         volume: 1.0,
       ).timeout(const Duration(seconds: 2));
     } catch (e) {
-      debugPrint('Sound error: $e');
+      // Ignore audio error
     }
   }
 
@@ -143,17 +143,20 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF4ADE80)),
+      return const PremiumAppBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(
+            child: CircularProgressIndicator(color: Color(0xFF4ADE80)),
+          ),
         ),
       );
     }
 
     if (_sequence.isEmpty) {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
+      return PremiumAppBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -161,9 +164,9 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'PRAYER SEQUENCE',
-            style: TextStyle(color: Colors.white),
+          title: Text(
+            AppLocalizations.of(context).translate('prayer_sequence').toUpperCase(),
+            style: const TextStyle(color: Colors.white),
           ),
         ),
         body: const Center(
@@ -172,6 +175,7 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
             style: TextStyle(color: Colors.white70, fontSize: 16),
           ),
         ),
+        ),
       );
     }
 
@@ -179,12 +183,15 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
     final progress =
         currentDhikr.currentCount / (currentDhikr.targetCount ?? 1);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+    final l10n = AppLocalizations.of(context);
+
+    return PremiumAppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(progress),
+            _buildHeader(progress, l10n),
             Expanded(
               child: Center(
                 child: Column(
@@ -228,15 +235,16 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
                 ),
               ),
             ),
-            _buildBottomButton(),
+            _buildBottomButton(l10n),
             const SizedBox(height: 20),
           ],
         ),
       ),
+      ),
     );
   }
 
-  Widget _buildHeader(double progress) {
+  Widget _buildHeader(double progress, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -247,11 +255,11 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () => Navigator.pop(context),
               ),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Prayer Dhikrs',
+                  l10n.translate('prayer_sequence'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -282,7 +290,7 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
               ),
               const Spacer(),
               Text(
-                '${(progress * 100).round()}% Completed',
+                '${(progress * 100).round()}% ${l10n.translate('completed')}',
                 style: const TextStyle(
                   color: Color(0xFF4ADE80),
                   fontSize: 14,
@@ -347,7 +355,7 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
     );
   }
 
-  Widget _buildBottomButton() {
+  Widget _buildBottomButton(AppLocalizations l10n) {
     final isLastStep = _currentIndex >= _sequence.length - 1;
     final isCompleted =
         _sequence[_currentIndex].currentCount >=
@@ -379,9 +387,9 @@ class _PrayerSequenceScreenState extends State<PrayerSequenceScreen> {
               Text(
                 isCompleted
                     ? (isLastStep
-                          ? 'Complete'
+                          ? l10n.translate('finish')
                           : 'Next: ${_sequence[_currentIndex + 1].name}')
-                    : 'Complete current to continue',
+                    : l10n.translate('continue_text'),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

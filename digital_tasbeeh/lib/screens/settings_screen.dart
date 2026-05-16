@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../services/storage_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import '../main.dart'; // For appSettingsProvider
+import '../l10n/app_localizations.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_conditions_screen.dart';
+import '../widgets/premium_app_background.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,38 +16,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final StorageService _storage = StorageService();
   AudioPlayer? _audioPlayer;
-
-  bool _vibration = true;
-  bool _mute = false;
-  String _language = 'eng';
-  String _theme = 'dark';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final settings = await _storage.loadSettings();
-    setState(() {
-      _vibration = settings['vibration'] ?? true;
-      _mute = settings['mute'] ?? false;
-      _language = settings['language'] ?? 'eng';
-      _theme = settings['theme'] ?? 'dark';
-    });
-  }
-
-  Future<void> _saveSettings() async {
-    await _storage.saveSettings({
-      'vibration': _vibration,
-      'mute': _mute,
-      'language': _language,
-      'theme': _theme,
-    });
-  }
 
   Future<void> _playClickSound() async {
     try {
@@ -52,7 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         volume: 1.0,
       ).timeout(const Duration(seconds: 2));
     } catch (e) {
-      debugPrint('Sound error: $e');
+      // Ignore audio error
     }
   }
 
@@ -64,98 +39,128 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
+    return AnimatedBuilder(
+      animation: appSettingsProvider,
+      builder: (context, child) {
+        final l10n = AppLocalizations.of(context);
+        final settings = appSettingsProvider; // global singleton
+
+        return PremiumAppBackground(
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: Column(
+              children: [
+            _buildHeader(l10n),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  _buildSectionHeader('PREFERENCES'),
+                  _buildSectionHeader(l10n.translate('preferences')),
                   const SizedBox(height: 15),
                   _buildToggleSetting(
-                    icon: _vibration ? Icons.vibration : Icons.do_not_disturb,
+                    icon: settings.vibration ? Icons.vibration : Icons.do_not_disturb,
                     iconColor: const Color(0xFF4ADE80),
-                    title: 'Vibration',
-                    value: _vibration,
+                    title: l10n.translate('vibration'),
+                    value: settings.vibration,
                     onChanged: (value) async {
-                      setState(() {
-                        _vibration = value;
-                      });
-                      await _saveSettings();
+                      await settings.setVibration(value);
                     },
                   ),
                   const SizedBox(height: 10),
                   _buildToggleSetting(
-                    icon: _mute ? Icons.volume_off : Icons.volume_up,
-                    iconColor: _mute ? Colors.redAccent : const Color(0xFF4ADE80),
-                    title: 'Mute',
-                    value: _mute,
+                    icon: settings.mute ? Icons.volume_off : Icons.volume_up,
+                    iconColor: settings.mute ? Colors.redAccent : const Color(0xFF4ADE80),
+                    title: l10n.translate('mute'),
+                    value: settings.mute,
                     onChanged: (value) async {
-                      setState(() {
-                        _mute = value;
-                      });
-                      await _saveSettings();
-                      // Play sound if mute is turned OFF
+                      await settings.setMute(value);
                       if (value == false) {
                         await _playClickSound();
                       }
                     },
                   ),
                   const SizedBox(height: 10),
-                  _buildLanguageSetting(),
+                  _buildLanguageSetting(settings, l10n),
                   const SizedBox(height: 30),
-                  _buildSectionHeader('APPEARANCE'),
+                  _buildSectionHeader(l10n.translate('appearance')),
                   const SizedBox(height: 15),
                   _buildNavigationSetting(
                     icon: Icons.dark_mode,
                     iconColor: Colors.purple,
-                    title: 'Theme',
-                    value: _theme == 'dark' ? 'Dark' : 'Light',
+                    title: l10n.translate('theme'),
+                    value: l10n.translate(settings.theme),
                     onTap: () {
-                      // Theme selection dialog
+                      _showThemeDialog(context, settings, l10n);
                     },
                   ),
                   const SizedBox(height: 30),
-                  _buildSectionHeader('SUPPORT'),
+                  _buildSectionHeader(l10n.translate('support')),
                   const SizedBox(height: 15),
                   _buildNavigationSetting(
                     icon: Icons.star,
                     iconColor: Colors.amber,
-                    title: 'Rate App',
-                    onTap: () {
-                      // Rate app logic
+                    title: l10n.translate('rate_app'),
+                    onTap: () async {
+                      final url = Uri.parse('market://details?id=com.haseebamjad.digitaltasbeeh');
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url);
+                      } else {
+                        final webUrl = Uri.parse('https://play.google.com/store/apps/details?id=com.haseebamjad.digitaltasbeeh');
+                        if (await canLaunchUrl(webUrl)) {
+                          await launchUrl(webUrl);
+                        }
+                      }
                     },
                   ),
                   const SizedBox(height: 10),
                   _buildNavigationSetting(
                     icon: Icons.share,
                     iconColor: Colors.blue,
-                    title: 'Share App',
+                    title: l10n.translate('share_app'),
                     onTap: () {
-                      // Share app logic
+                      Share.share('Check out Digital Tasbeeh App! https://play.google.com/store/apps/details?id=com.haseebamjad.digitaltasbeeh');
                     },
                   ),
                   const SizedBox(height: 10),
                   _buildNavigationSetting(
                     icon: Icons.apps,
                     iconColor: Colors.pink,
-                    title: 'Other Apps',
+                    title: l10n.translate('other_apps'),
+                    onTap: () async {
+                      final url = Uri.parse('https://play.google.com/store/apps/developer?id=Muhammad+Haseeb+Amjad');
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _buildNavigationSetting(
+                    icon: Icons.privacy_tip,
+                    iconColor: Colors.teal,
+                    title: l10n.translate('privacy_policy'),
                     onTap: () {
-                      // Other apps logic
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _buildNavigationSetting(
+                    icon: Icons.gavel,
+                    iconColor: Colors.indigo,
+                    title: l10n.translate('terms_conditions'),
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsConditionsScreen()));
                     },
                   ),
                   const SizedBox(height: 40),
                   Center(
                     child: Text(
-                      'Version 2.0.1 (Build 45)',
+                      l10n.translate('developed_by'),
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.4),
                         fontSize: 12,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -165,10 +170,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
+      ),
+    );
+      },
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -178,9 +186,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 10),
-          const Text(
-            'Settings',
-            style: TextStyle(
+          Text(
+            l10n.translate('settings'),
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -197,9 +205,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Row(
         children: [
           Icon(
-            title == 'PREFERENCES'
+            title == AppLocalizations.of(context).translate('preferences')
                 ? Icons.tune
-                : title == 'APPEARANCE'
+                : title == AppLocalizations.of(context).translate('appearance')
                 ? Icons.palette
                 : Icons.favorite,
             color: const Color(0xFF4ADE80),
@@ -267,7 +275,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLanguageSetting() {
+  Widget _buildLanguageSetting(dynamic settings, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -288,34 +296,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(width: 15),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Language',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+            child: Text(
+              l10n.translate('language'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           Row(
             children: [
-              _buildLanguageButton('اردو', _language == 'urdu', () {
-                setState(() {
-                  _language = 'urdu';
-                });
-                _saveSettings();
+              _buildLanguageButton('اردو', settings.language == 'urdu', () async {
+                await settings.setLanguage('urdu');
               }),
               const SizedBox(width: 10),
-              _buildLanguageButton('Eng', _language == 'eng', () {
-                setState(() {
-                  _language = 'eng';
-                });
-                _saveSettings();
+              _buildLanguageButton('Eng', settings.language == 'eng', () async {
+                await settings.setLanguage('eng');
               }),
             ],
           ),
@@ -403,6 +400,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showThemeDialog(BuildContext context, dynamic settings, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A2F2F),
+          title: Text(l10n.translate('select_theme'), style: const TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text(l10n.translate('dark'), style: const TextStyle(color: Colors.white)),
+                leading: Radio<String>(
+                  value: 'dark',
+                  groupValue: settings.theme,
+                  onChanged: (value) async {
+                    await settings.setTheme(value!);
+                    Navigator.pop(context);
+                  },
+                  activeColor: const Color(0xFF4ADE80),
+                ),
+              ),
+              ListTile(
+                title: Text(l10n.translate('black'), style: const TextStyle(color: Colors.white)),
+                leading: Radio<String>(
+                  value: 'black',
+                  groupValue: settings.theme,
+                  onChanged: (value) async {
+                    await settings.setTheme(value!);
+                    Navigator.pop(context);
+                  },
+                  activeColor: const Color(0xFF4ADE80),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.translate('cancel'), style: const TextStyle(color: Color(0xFF4ADE80))),
+            ),
+          ],
+        );
+      },
     );
   }
 }

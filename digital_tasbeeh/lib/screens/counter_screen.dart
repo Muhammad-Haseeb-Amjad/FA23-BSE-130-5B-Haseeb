@@ -13,13 +13,11 @@ import 'add_dhikr_screen.dart';
 import 'my_dhikrs_screen.dart';
 import 'prayer_sequence_screen.dart';
 import 'settings_screen.dart';
+import '../main.dart';
+import '../l10n/app_localizations.dart';
+import '../widgets/premium_app_background.dart';
 
-// Global flag to control test mode (suppress audio playback during tests)
 bool isCounterScreenTestMode = false;
-
-// For testing only — allows injecting a known _opaqueImageRect to expose coordinate-mapping bugs.
-// Set this before pumping the widget in tests; clear it in tearDown.
-Rect? counterScreenTestOpaqueRect;
 
 class CounterScreen extends StatefulWidget {
   const CounterScreen({super.key});
@@ -29,14 +27,13 @@ class CounterScreen extends StatefulWidget {
 }
 
 class _CounterScreenState extends State<CounterScreen> {
-  static const bool _showDebugZones = false;
   static const Key _allahTapKey = Key('allah_tap_area');
   static const Key _saveTapKey = Key('save_tap_area');
   static const Key _replayTapKey = Key('replay_tap_area');
   static const Key _counterTextKey = Key('lcd_counter_text');
 
-  static const String _primaryImageAsset = 'assets/images/tasbeeh.png';
-  static const String _fallbackImageAsset = 'lib/assets/tasbeeh.png';
+  static const String _primaryImageAsset = 'assets/tasbeeh.png';
+  static const String _fallbackImageAsset = 'assets/tasbeeh.png';
 
   static const double _saveCenterX = 0.313;
   static const double _saveCenterY = 0.496;
@@ -81,12 +78,11 @@ class _CounterScreenState extends State<CounterScreen> {
     if (!mounted) return;
     setState(() {
       _count = loadedCount;
-      _settings = loadedSettings;
       _imageAssetPath = resolvedAssetPath;
       _isLoading = false;
     });
 
-    final computedRect = counterScreenTestOpaqueRect ?? await _computeOpaqueImageRect(resolvedAssetPath);
+    final computedRect = await _computeOpaqueImageRect(resolvedAssetPath);
 
     if (!mounted) return;
     setState(() {
@@ -177,11 +173,7 @@ class _CounterScreenState extends State<CounterScreen> {
   }
 
   Future<void> _playClickSound() async {
-    // Skip audio playback in test mode to avoid pending timers
-    if (isCounterScreenTestMode) {
-      return;
-    }
-    
+    if (isCounterScreenTestMode) return;
     try {
       final player = _audioPlayer ??= AudioPlayer();
       await player.play(
@@ -190,7 +182,7 @@ class _CounterScreenState extends State<CounterScreen> {
         volume: 1.0,
       ).timeout(const Duration(seconds: 2));
     } catch (e) {
-      debugPrint('Sound error: $e');
+      // Ignore audio error
     }
   }
 
@@ -206,17 +198,17 @@ class _CounterScreenState extends State<CounterScreen> {
       await _storage.saveDhikr(updated);
     }
 
-    if (_settings['vibration'] == true) {
+    if (appSettingsProvider.vibration) {
       try {
         if (await Vibration.hasVibrator()) {
           await Vibration.vibrate(duration: 50);
         }
       } catch (e) {
-        debugPrint('Vibration error: $e');
+        // Ignore vibration error
       }
     }
 
-    if (_settings['mute'] != true) {
+    if (!appSettingsProvider.mute) {
       await _playClickSound();
     }
   }
@@ -293,13 +285,14 @@ class _CounterScreenState extends State<CounterScreen> {
   }
 
   Future<void> _confirmReset() async {
+    final l10n = AppLocalizations.of(context);
     final shouldReset = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF234141),
-        title: const Text(
-          'Reset Count?',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          l10n.translate('reset_count'),
+          style: const TextStyle(color: Colors.white),
         ),
         content: const Text(
           'Are you sure you want to reset the count to 0000?',
@@ -308,11 +301,11 @@ class _CounterScreenState extends State<CounterScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.translate('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Reset'),
+            child: Text(l10n.translate('reset')),
           ),
         ],
       ),
@@ -350,9 +343,6 @@ class _CounterScreenState extends State<CounterScreen> {
       context,
       MaterialPageRoute(builder: (context) => const SettingsScreen()),
     );
-    if (!mounted) return;
-    _settings = await _storage.loadSettings();
-    setState(() {});
   }
 
   @override
@@ -364,23 +354,28 @@ class _CounterScreenState extends State<CounterScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF4ADE80)),
+      return const PremiumAppBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(
+            child: CircularProgressIndicator(color: Color(0xFF4ADE80)),
+          ),
         ),
       );
     }
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      drawer: _buildSideDrawer(),
+    final l10n = AppLocalizations.of(context);
+    
+    return PremiumAppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+      drawer: _buildSideDrawer(l10n),
       body: SafeArea(
         child: Column(
           children: [
             _buildTopBar(),
             const SizedBox(height: 20),
-            _buildToggleButtons(),
+            _buildToggleButtons(l10n),
             if (_activeDhikr != null) ...[
               const SizedBox(height: 10),
               Padding(
@@ -499,37 +494,7 @@ class _CounterScreenState extends State<CounterScreen> {
                             radius: imageSide * _saveReplayRadiusFactor,
                             onTap: _confirmReset,
                           ),
-                          if (_showDebugZones) ...[
-                            _buildDebugCircle(
-                              imageSide: imageSide,
-                              centerX: _saveCenterX,
-                              centerY: _saveCenterY,
-                              radius: imageSide * _saveReplayRadiusFactor,
-                              color: Colors.red,
-                            ),
-                            _buildDebugCircle(
-                              imageSide: imageSide,
-                              centerX: _replayCenterX,
-                              centerY: _replayCenterY,
-                              radius: imageSide * _saveReplayRadiusFactor,
-                              color: Colors.blue,
-                            ),
-                            _buildDebugCircle(
-                              imageSide: imageSide,
-                              centerX: _allahCenterX,
-                              centerY: _allahCenterY,
-                              radius: imageSide * _allahRadiusFactor,
-                              color: Colors.green,
-                            ),
-                            _buildDebugRect(
-                              imageSide: imageSide,
-                              centerX: _lcdImgLeft + (_lcdImgRight - _lcdImgLeft) / 2,
-                              centerY: _lcdImgTop + (_lcdImgBottom - _lcdImgTop) / 2,
-                              width: (_lcdImgRight - _lcdImgLeft) * imageSide * _imgAspect,
-                              height: (_lcdImgBottom - _lcdImgTop) * imageSide,
-                              color: Colors.yellow,
-                            ),
-                          ],
+
                         ],
                       ),
                     ),
@@ -540,6 +505,7 @@ class _CounterScreenState extends State<CounterScreen> {
             const SizedBox(height: 12),
           ],
         ),
+      ),
       ),
     );
   }
@@ -590,7 +556,7 @@ class _CounterScreenState extends State<CounterScreen> {
     );
   }
 
-  Widget _buildSideDrawer() {
+  Widget _buildSideDrawer(AppLocalizations l10n) {
     return Drawer(
       backgroundColor: const Color(0xFF071A17),
       child: SafeArea(
@@ -616,7 +582,7 @@ class _CounterScreenState extends State<CounterScreen> {
             const Divider(color: Colors.white24),
             ListTile(
               leading: const Icon(Icons.auto_awesome, color: Colors.white70),
-              title: const Text('Prayer Dhikr', style: TextStyle(color: Colors.white)),
+              title: Text(l10n.translate('prayer_dhikr'), style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
                 _openPrayerDhikr();
@@ -624,7 +590,7 @@ class _CounterScreenState extends State<CounterScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.list, color: Colors.white70),
-              title: const Text('Dhikr List', style: TextStyle(color: Colors.white)),
+              title: Text(l10n.translate('dhikr_list'), style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
                 _openDhikrList();
@@ -632,7 +598,7 @@ class _CounterScreenState extends State<CounterScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.settings, color: Colors.white70),
-              title: const Text('Settings', style: TextStyle(color: Colors.white)),
+              title: Text(l10n.translate('settings'), style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
                 _navigateToSettings();
@@ -644,20 +610,20 @@ class _CounterScreenState extends State<CounterScreen> {
     );
   }
 
-  Widget _buildToggleButtons() {
+  Widget _buildToggleButtons(AppLocalizations l10n) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _buildToggleButton(
-          'Vibration',
+          l10n.translate('vibration'),
           Icons.vibration,
-          _settings['vibration'] == true,
+          appSettingsProvider.vibration,
         ),
         const SizedBox(width: 20),
         _buildToggleButton(
-          'Mute',
-          _settings['mute'] == true ? Icons.volume_off : Icons.volume_up,
-          _settings['mute'] == true,
+          l10n.translate('mute'),
+          appSettingsProvider.mute ? Icons.volume_off : Icons.volume_up,
+          appSettingsProvider.mute,
         ),
       ],
     );
@@ -667,19 +633,17 @@ class _CounterScreenState extends State<CounterScreen> {
     return GestureDetector(
       onTap: () async {
         // Toggle behavior for vibration and mute buttons
-        if (label.toLowerCase().contains('vibration')) {
-          _settings['vibration'] = !(_settings['vibration'] == true);
+        if (label.toLowerCase() == 'vibration' || label == 'تھرتھراہٹ') {
+          await appSettingsProvider.setVibration(!appSettingsProvider.vibration);
         } else {
           // Mute toggle - consistent with vibration
-          final newMuteState = !(_settings['mute'] == true);
-          _settings['mute'] = newMuteState;
+          final newMuteState = !appSettingsProvider.mute;
+          await appSettingsProvider.setMute(newMuteState);
           // Play sound if mute is turned OFF
           if (newMuteState == false) {
             await _playClickSound();
           }
         }
-        await _storage.saveSettings(_settings);
-        setState(() {});
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -733,57 +697,6 @@ class _CounterScreenState extends State<CounterScreen> {
       ),
     );
   }
-
-  Widget _buildDebugCircle({
-    required double imageSide,
-    required double centerX,
-    required double centerY,
-    required double radius,
-    required Color color,
-  }) {
-    final diameter = radius * 2;
-
-    return Positioned(
-      left: (imageSide * centerX) - radius,
-      top: (imageSide * centerY) - radius,
-      width: diameter,
-      height: diameter,
-      child: IgnorePointer(
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color.withOpacity(0.28),
-            border: Border.all(color: color, width: 2),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDebugRect({
-    required double imageSide,
-    required double centerX,
-    required double centerY,
-    required double width,
-    required double height,
-    required Color color,
-  }) {
-    return Positioned(
-      left: (imageSide * centerX) - (width / 2),
-      top: (imageSide * centerY) - (height / 2),
-      width: width,
-      height: height,
-      child: IgnorePointer(
-        child: Container(
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.22),
-            border: Border.all(color: color, width: 2),
-          ),
-        ),
-      ),
-    );
-  }
-
   String get _formattedCount => _count.toString().padLeft(4, '0');
 }
 

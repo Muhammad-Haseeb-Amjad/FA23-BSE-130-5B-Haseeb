@@ -4,6 +4,8 @@ import '../services/storage_service.dart';
 import '../utils/app_message.dart';
 import '../utils/dhikr_display.dart';
 import 'add_dhikr_screen.dart';
+import '../l10n/app_localizations.dart';
+import '../widgets/premium_app_background.dart';
 
 class MyDhikrsScreen extends StatefulWidget {
   const MyDhikrsScreen({super.key});
@@ -49,14 +51,14 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
     });
   }
 
-  Future<void> _deleteDhikr(String id, String name) async {
+  Future<void> _deleteDhikr(String id, String name, AppLocalizations l10n) async {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF234141),
-        title: const Text(
-          'Delete Dhikr?',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          l10n.translate('delete_dhikr'),
+          style: const TextStyle(color: Colors.white),
         ),
         content: Text(
           'Are you sure you want to delete "$name"?',
@@ -65,11 +67,11 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            child: Text(l10n.translate('cancel'), style: const TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Color(0xFFFF6B6B))),
+            child: Text(l10n.translate('delete'), style: const TextStyle(color: Color(0xFFFF6B6B))),
           ),
         ],
       ),
@@ -136,12 +138,14 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+    final l10n = AppLocalizations.of(context);
+    return PremiumAppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(l10n),
             if (_isSearching)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -154,7 +158,7 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
                     });
                   },
                   decoration: InputDecoration(
-                    hintText: 'Search dhikrs...',
+                    hintText: l10n.translate('search_dhikrs'),
                     hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
                     prefixIcon: const Icon(Icons.search, color: Colors.white70),
                     suffixIcon: _searchController.text.isNotEmpty
@@ -186,14 +190,14 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
                 ),
               )
             else if (_filteredDhikrs.isEmpty)
-              _buildEmptyState()
+              _buildEmptyState(l10n)
             else
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(20),
                   itemCount: _filteredDhikrs.length,
                   itemBuilder: (context, index) {
-                    return _buildDhikrCard(_filteredDhikrs[index]);
+                    return _buildDhikrCard(_filteredDhikrs[index], l10n);
                   },
                 ),
               ),
@@ -205,10 +209,11 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
         backgroundColor: const Color(0xFF4ADE80),
         child: const Icon(Icons.add, color: Color(0xFF1A2F2F), size: 32),
       ),
+      ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -229,13 +234,13 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
           ),
           const SizedBox(width: 10),
           if (!_isSearching)
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'My Dhikrs',
-                    style: TextStyle(
+                    l10n.translate('my_dhikrs'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -261,7 +266,7 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations l10n) {
     return Expanded(
       child: Center(
         child: Column(
@@ -274,7 +279,7 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Empty State Preview',
+              l10n.translate('no_dhikrs_found'),
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
                 fontSize: 20,
@@ -296,7 +301,7 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
     );
   }
 
-  Widget _buildDhikrCard(Dhikr dhikr) {
+  Widget _buildDhikrCard(Dhikr dhikr, AppLocalizations l10n) {
     final icon = _getIconForDhikr(dhikr.name);
     final isCompleted = dhikr.isCompleted;
     final hasTarget = dhikr.hasTarget && dhikr.targetCount != null;
@@ -485,7 +490,7 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          'Completed: ${dhikr.currentCount}',
+                          '${l10n.translate('completed')}: ${dhikr.currentCount}',
                           style: const TextStyle(
                             color: Color(0xFF4ADE80),
                             fontSize: 12,
@@ -500,7 +505,7 @@ class _MyDhikrsScreenState extends State<MyDhikrsScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.white70),
-                  onPressed: () => _deleteDhikr(dhikr.id, dhikr.name),
+                  onPressed: () => _deleteDhikr(dhikr.id, dhikr.name, l10n),
                 ),
               ],
             ),
