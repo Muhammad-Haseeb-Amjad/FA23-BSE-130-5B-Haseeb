@@ -13,11 +13,14 @@ class Registration {
     this.data,
   });
 
-  factory Registration.fromJson(dynamic json) => Registration(
-        status: json["status"],
-        message: json["message"],
-        data: json["data"] == null ? null : User.fromJson(json["data"]),
-      );
+  factory Registration.fromJson(dynamic json) {
+    final data = json is Map ? json : <String, dynamic>{};
+    return Registration(
+      status: data["status"],
+      message: data["message"],
+      data: data["data"] is Map ? User.fromJson(data["data"]) : null,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         "status": status,
@@ -71,6 +74,9 @@ class User {
   });
 
   User.fromJson(dynamic json) {
+    if (json is! Map) {
+      json = <String, dynamic>{};
+    }
     id = json['id'];
     identity = json['identity'];
     email = json['email'];
@@ -113,14 +119,16 @@ class User {
     if (json['interest'] != null) {
       interest = [];
       json['interest'].forEach((v) {
-        interest?.add(Interest.fromJson(v));
+        if (v is Map) {
+          interest?.add(Interest.fromJson(Map<String, dynamic>.from(v)));
+        }
       });
     }
 
     if (json['stories'] != null) {
       stories = [];
       json['stories'].forEach((v) {
-        var s = Story.fromJson(v);
+        var s = Story.fromJson(v is Map ? Map<String, dynamic>.from(v) : v);
         s.user = this;
         stories?.add(s);
       });

@@ -4,8 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:detectable_text_field/detectable_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:untitled/common/api_service/moderator_service.dart';
 import 'package:untitled/common/api_service/notification_service.dart';
+import 'package:untitled/common/api_service/post_service.dart';
 import 'package:untitled/common/api_service/room_service.dart';
 import 'package:untitled/common/api_service/user_service.dart';
 import 'package:untitled/common/extensions/font_extension.dart';
@@ -121,7 +123,7 @@ class ChattingController extends BlockUserController {
       if (deleteId == "" && messages.isEmpty) {
         db.collection(FirebaseConst.chats).doc(roomData.conversationId ?? '').set(roomData.toFireStore());
       } else {
-        db.collection(FirebaseConst.chats).doc(roomData.conversationId ?? '').update(roomData.toFireStore());
+        db.collection(FirebaseConst.chats).doc(roomData.conversationId ?? '').set(roomData.toFireStore(), SetOptions(merge: true));
       }
       var totalUserForNotifications = room?.roomUsers?.where((element) => element.isPushNotifications == 1).map((e) => e.deviceToken ?? '').toList();
       totalUserForNotifications?.removeWhere((element) => element == '');
@@ -132,9 +134,9 @@ class ChattingController extends BlockUserController {
       chatUserRoom?.newMsgCount = 0;
       chatUserRoom?.isDeleted = false;
       if (deleteId == "" && messages.isEmpty) {
-        documentSender?.set(chatUserRoom?.toFireStore());
+        documentSender?.set(chatUserRoom?.toFireStore(), SetOptions(merge: true));
       } else {
-        documentSender?.update(chatUserRoom?.toFireStore() ?? {});
+        documentSender?.set(chatUserRoom?.toFireStore() ?? {}, SetOptions(merge: true));
       }
     }
 
@@ -153,12 +155,12 @@ class ChattingController extends BlockUserController {
         isDeleted: false,
       );
       if ((deleteId == "" && messages.isEmpty) || this.myChatRoom?.type == null) {
-        documentReceiver?.set(myChatRoom.toFireStore());
+        documentReceiver?.set(myChatRoom.toFireStore(), SetOptions(merge: true));
       } else {
         myChatRoom.type = this.myChatRoom?.type;
         var map = myChatRoom.toFireStore();
         map[FirebaseConst.newMsgCount] = FieldValue.increment(1);
-        documentReceiver?.update(map);
+        documentReceiver?.set(map, SetOptions(merge: true));
       }
       if (user?.isPushNotifications == 1) {
         NotificationService.shared.sendToSingleUser(token: user?.deviceToken ?? '', deviceType: user?.deviceType, title: myUser?.fullName ?? '', body: lastMsg, conversationId: chatUserRoom?.conversationId ?? '');
@@ -239,9 +241,9 @@ class ChattingController extends BlockUserController {
     if (chatUserRoom?.type == 2) {
       var map = chatUserRoom?.unreadCounts ?? {};
       map['${myUser?.id}'] = 0;
-      db.collection(FirebaseConst.chats).doc(chatUserRoom?.conversationId).update({FirebaseConst.unreadCounts: map});
+      db.collection(FirebaseConst.chats).doc(chatUserRoom?.conversationId).set({FirebaseConst.unreadCounts: map}, SetOptions(merge: true));
     } else {
-      documentSender?.update({FirebaseConst.newMsgCount: 0});
+      documentSender?.set({FirebaseConst.newMsgCount: 0}, SetOptions(merge: true));
     }
   }
 
@@ -322,14 +324,14 @@ class ChattingController extends BlockUserController {
       buttonTitle: LKeys.reject,
       onTap: () {
         var date = DateTime.now().microsecondsSinceEpoch.toString();
-        documentSender?.update({FirebaseConst.deletedId: date, FirebaseConst.isDeleted: true});
+          documentSender?.set({FirebaseConst.deletedId: date, FirebaseConst.isDeleted: true}, SetOptions(merge: true));
         Get.back();
       },
     ));
   }
 
   void acceptMessageRequest() {
-    documentSender?.update({FirebaseConst.type: 1});
+      documentSender?.set({FirebaseConst.type: 1}, SetOptions(merge: true));
     chatUserRoom?.type = 1;
     update();
   }
@@ -341,7 +343,7 @@ class ChattingController extends BlockUserController {
       room?.userRoomStatus = GroupUserAccessType.none.value;
       room?.totalMember = (room?.totalMember ?? 0) - 1;
       chatUserRoom?.usersIds?.removeWhere((element) => element == SessionManager.shared.getUserID());
-      db.collection(FirebaseConst.chats).doc(chatUserRoom?.conversationId ?? '').update(chatUserRoom?.toFireStore() ?? {});
+      db.collection(FirebaseConst.chats).doc(chatUserRoom?.conversationId ?? '').set(chatUserRoom?.toFireStore() ?? {}, SetOptions(merge: true));
       Get.back(result: room);
 
       update();
@@ -419,6 +421,150 @@ class ChattingController extends BlockUserController {
       ),
     );
   }
+
+  // ─── WhatsApp-like video upload helpers ───────────────────────────────────
+
+  /// Insert a local pending video bubble immediately when the user taps SEND.
+  void addPendingVideoMessage({
+    required String localId,
+    required String localVideoPath,
+    required String localThumbPath,
+    required String caption,
+  }) {
+    final pending = ChatMessage(
+      id: localId,
+      localId: localId,
+      msgType: MessageType.video.value,
+      uploadStatus: 'uploading',
+      uploadProgress: 0.0,
+      localVideoPath: localVideoPath,
+      localThumbnailPath: localThumbPath,
+      msg: caption,
+      senderId: myUser?.id,
+    );
+    messages.insert(0, pending);
+    update();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (scrollController.hasClients) {
+        scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  /// Update upload progress on the pending bubble (0.0 – 1.0).
+  void updatePendingVideoProgress(String localId, double progress) {
+    final index = messages.indexWhere((m) => m.localId == localId);
+    if (index == -1) return;
+    messages[index].uploadProgress = progress;
+    update();
+  }
+
+  /// Called when both video + thumbnail uploads succeed.
+  /// Replaces the pending bubble with the final message and writes to Firestore.
+  void completePendingVideoMessage({
+    required String localId,
+    required String videoURL,
+    required String thumbnailURL,
+  }) {
+    final index = messages.indexWhere((m) => m.localId == localId);
+    if (index == -1) return;
+    final original = messages[index];
+
+    final completed = ChatMessage(
+      id: localId,
+      localId: localId,
+      msgType: MessageType.video.value,
+      uploadStatus: 'uploaded',
+      uploadProgress: 1.0,
+      content: videoURL,
+      thumbnail: thumbnailURL,
+      msg: original.msg,
+      senderId: original.senderId,
+    );
+    messages[index] = completed;
+
+    // Persist to Firestore so other devices receive the video message.
+    drChatMessages?.doc(localId).set(completed.toFireStore());
+
+    // Update chat room last-message metadata.
+    final caption = original.msg ?? '';
+    final lastMsg = caption.isNotEmpty ? caption : 'Video';
+    final date = DateTime.now();
+    if (room != null) {
+      db.collection(FirebaseConst.chats).doc(chatUserRoom?.conversationId ?? '').set(
+        {FirebaseConst.lastMsg: lastMsg, 'time': date},
+        SetOptions(merge: true),
+      );
+    } else {
+      chatUserRoom?.lastMsg = lastMsg;
+      chatUserRoom?.time = date;
+      documentSender?.set(chatUserRoom?.toFireStore() ?? {}, SetOptions(merge: true));
+    }
+
+    update();
+  }
+
+  /// Mark the pending bubble as failed so the user can retry.
+  void failPendingVideoMessage({required String localId}) {
+    final index = messages.indexWhere((m) => m.localId == localId);
+    if (index == -1) return;
+    messages[index].uploadStatus = 'failed';
+    update();
+  }
+
+  /// Retry a failed video upload using the original local file paths.
+  void retryVideoUpload(ChatMessage message) {
+    final localId = message.localId ?? '';
+    if (localId.isEmpty) return;
+    final localVideoPath = message.localVideoPath ?? '';
+    final localThumbPath = message.localThumbnailPath ?? '';
+    if (localVideoPath.isEmpty) return;
+
+    final index = messages.indexWhere((m) => m.localId == localId);
+    if (index == -1) return;
+    messages[index].uploadStatus = 'uploading';
+    messages[index].uploadProgress = 0.0;
+    update();
+
+    PostService.shared.uploadFileWithProgress(
+      XFile(localVideoPath),
+      onProgress: (pct) => updatePendingVideoProgress(localId, pct * 0.9),
+    ).then((videoURL) {
+      if (videoURL == null) {
+        failPendingVideoMessage(localId: localId);
+        return;
+      }
+      if (localThumbPath.isNotEmpty) {
+        PostService.shared.uploadFileWithProgress(XFile(localThumbPath)).then((thumbURL) {
+          completePendingVideoMessage(
+            localId: localId,
+            videoURL: videoURL,
+            thumbnailURL: thumbURL ?? '',
+          );
+        }).catchError((_) {
+          completePendingVideoMessage(
+            localId: localId,
+            videoURL: videoURL,
+            thumbnailURL: '',
+          );
+        });
+      } else {
+        completePendingVideoMessage(
+          localId: localId,
+          videoURL: videoURL,
+          thumbnailURL: '',
+        );
+      }
+    }).catchError((_) {
+      failPendingVideoMessage(localId: localId);
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
 
   void stopNotification() {
     SessionManager.shared.setStoredConversation(chatUserRoom?.conversationId ?? '');

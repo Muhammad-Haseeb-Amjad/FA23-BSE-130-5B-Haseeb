@@ -11,9 +11,10 @@ class RoomModel {
   });
 
   RoomModel.fromJson(dynamic json) {
-    status = json['status'];
-    message = json['message'];
-    data = json['data'] != null ? Room.fromJson(json['data']) : null;
+    final data = json is Map ? json : <String, dynamic>{};
+    status = data['status'];
+    message = data['message'];
+    this.data = data['data'] is Map ? Room.fromJson(data['data']) : null;
   }
 
   bool? status;
@@ -63,30 +64,35 @@ class Room {
   });
 
   Room.fromJson(dynamic json) {
-    id = json['id'];
-    adminId = json['admin_id'];
-    photo = json['photo'];
-    title = json['title'];
-    desc = json['desc'];
-    interestIds = json['interest_ids'];
-    isPrivate = json['is_private'];
-    isJoinRequestEnable = json['is_join_request_enable'];
-    totalMember = json['total_member'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    userRoomStatus = json['userRoomStatus'];
-    isMute = json['is_mute'];
-    if (json['interests'] != null) {
+    final data = json is Map ? json : <String, dynamic>{};
+    id = data['id'];
+    adminId = data['admin_id'];
+    photo = data['photo'];
+    title = data['title'];
+    desc = data['desc'];
+    interestIds = data['interest_ids'];
+    isPrivate = data['is_private'];
+    isJoinRequestEnable = data['is_join_request_enable'];
+    totalMember = data['total_member'];
+    createdAt = data['created_at'];
+    updatedAt = data['updated_at'];
+    userRoomStatus = data['userRoomStatus'];
+    isMute = data['is_mute'];
+    if (data['interests'] != null) {
       interests = [];
-      json['interests'].forEach((v) {
-        interests?.add(Interest.fromJson(v));
+      data['interests'].forEach((v) {
+        if (v is Map) {
+          interests?.add(Interest.fromJson(Map<String, dynamic>.from(v)));
+        }
       });
     }
-    admin = json['admin'] != null ? User.fromJson(json['admin']) : null;
-    if (json['roomUsers'] != null) {
+    admin = data['admin'] != null ? User.fromJson(data['admin']) : null;
+    if (data['roomUsers'] != null) {
       roomUsers = [];
-      json['roomUsers'].forEach((v) {
-        roomUsers?.add(User.fromJson(v));
+      data['roomUsers'].forEach((v) {
+        if (v is Map) {
+          roomUsers?.add(User.fromJson(Map<String, dynamic>.from(v)));
+        }
       });
     }
   }

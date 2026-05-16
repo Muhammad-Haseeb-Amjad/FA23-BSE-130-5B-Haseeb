@@ -15,11 +15,14 @@ class FeedScreenController extends BlockUserController {
   String profileFeedID = "profileFeedID";
   String feedViewID = "feedViewID";
   ScrollController? scrollController = ScrollController();
+  VoidCallback? _scrollListener;
+  bool _ownsScrollController = false;
   int userId = 0;
 
   FeedScreenController({this.isFromFeedScreen, this.scrollController}) {
     if (this.scrollController == null) {
       this.scrollController = ScrollController();
+      _ownsScrollController = true;
     }
   }
 
@@ -30,19 +33,19 @@ class FeedScreenController extends BlockUserController {
     if (isFromFeedScreen == true) {
       fetchFeeds();
     }
-    scrollController?.addListener(
-      () {
-        if (scrollController!.offset == scrollController!.position.maxScrollExtent) {
-          if (!isLoading.value) {
-            if ((isFromFeedScreen ?? false) == true) {
-              fetchFeeds();
-            } else {
-              fetchUserPosts(userID: userId);
-            }
+    _scrollListener ??= () {
+      if (scrollController == null || !scrollController!.hasClients) return;
+      if (scrollController!.offset == scrollController!.position.maxScrollExtent) {
+        if (!isLoading.value) {
+          if ((isFromFeedScreen ?? false) == true) {
+            fetchFeeds();
+          } else {
+            fetchUserPosts(userID: userId);
           }
         }
-      },
-    );
+      }
+    };
+    scrollController?.addListener(_scrollListener!);
 
     // if (isFromFeedScreen == true && posts.isEmpty) {
     //   fetchFeeds();
@@ -99,5 +102,16 @@ class FeedScreenController extends BlockUserController {
         isAllPostLoaded = true;
       }
     });
+  }
+
+  @override
+  void onClose() {
+    if (_scrollListener != null) {
+      scrollController?.removeListener(_scrollListener!);
+    }
+    if (_ownsScrollController) {
+      scrollController?.dispose();
+    }
+    super.onClose();
   }
 }

@@ -22,6 +22,7 @@ class ProfileController extends FeedScreenController {
 
   double maxExtent = 250.0;
   double currentExtent = 250.0;
+  double _lastReportedOpacity = -1.0;
   final bool isFromTabBar;
   final idForImage = '${DateTime.now().microsecondsSinceEpoch}';
 
@@ -29,6 +30,7 @@ class ProfileController extends FeedScreenController {
   RxList<Reel> reels = RxList();
 
   PageController pageController = PageController(initialPage: 0);
+  VoidCallback? _profileScrollListener;
 
   // ScrollController newScrollController = ScrollController();
 
@@ -89,12 +91,23 @@ class ProfileController extends FeedScreenController {
       fetchUserPosts(userID: userID);
       fetchReels();
     }
-    scrollController?.addListener(() {
+    _profileScrollListener ??= () {
+      if (scrollController == null || !scrollController!.hasClients) return;
       currentExtent = maxExtent - scrollController!.offset;
       if (currentExtent < 0) currentExtent = 0.0;
       if (currentExtent > maxExtent) currentExtent = maxExtent;
-      update([scrollID]);
-    });
+      // Compute opacity using the same formula as profile_screen.dart
+      final temp = currentExtent * 0.28;
+      final size = temp < 35.0 ? 35.0 : temp;
+      final o = (-1 * (size - 70)) * 0.02857143;
+      final newOpacity = (1 - (o > 1.0 ? 1.0 : o)).clamp(0.0, 1.0);
+      // Only rebuild when opacity changes meaningfully — eliminates jank
+      if ((newOpacity - _lastReportedOpacity).abs() > 0.02) {
+        _lastReportedOpacity = newOpacity;
+        update([scrollID]);
+      }
+    };
+    scrollController?.addListener(_profileScrollListener!);
   }
 
   bool isAllReelsFetched = false;
@@ -105,7 +118,8 @@ class ProfileController extends FeedScreenController {
       reels.clear();
     }
     if (isAllReelsFetched) return;
-    var newReels = await ReelService.shared.fetchReelsByUser(userId: userId, start: reels.length);
+    var newReels = await ReelService.shared
+        .fetchReelsByUser(userId: userId, start: reels.length);
     reels.addAll(newReels);
     if (newReels.length < Limits.pagination) {
       isAllReelsFetched = true;
@@ -121,7 +135,8 @@ class ProfileController extends FeedScreenController {
           ModeratorService.shared.blockUser(
               userId: userId,
               completion: () async {
-                user?.followingStatus = await FollowController.unfollow(user)?.followingStatus;
+                user?.followingStatus =
+                    await FollowController.unfollow(user)?.followingStatus;
                 posts.clear();
                 updateEverything();
                 Get.back();
@@ -149,10 +164,16 @@ class ProfileController extends FeedScreenController {
   @override
   void onClose() {
     Functions.changStatusBar(StatusBarStyle.white);
+    if (_profileScrollListener != null) {
+      scrollController?.removeListener(_profileScrollListener!);
+    }
+    pageController.dispose();
+    super.onClose();
   }
 
   void shareProfile() {
-    ShareManager.shared.shareTheContent(key: ShareKeys.user, value: user?.id?.toInt() ?? 0);
+    ShareManager.shared
+        .shareTheContent(key: ShareKeys.user, value: user?.id?.toInt() ?? 0);
   }
 
   void onChangeSegment(int value) {

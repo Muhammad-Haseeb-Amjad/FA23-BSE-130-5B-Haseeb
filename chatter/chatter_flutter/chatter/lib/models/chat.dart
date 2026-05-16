@@ -49,7 +49,24 @@ class ChatUserRoom {
     SnapshotOptions? options,
   ) {
     final data = snapshot.data();
-    return ChatUserRoom(conversationId: data?['conversationId'], iAmBlocked: data?['iAmBlocked'], iBlocked: data?['iBlocked'], deletedId: data?['deletedId'], isDeleted: data?['isDeleted'], isMute: data?['isMute'], lastMsg: data?['lastMsg'], newMsgCount: data?['newMsgCount'], time: (data?['time'] as Timestamp?)?.toDate(), type: data?['type'], title: data?['title'], profileImage: data?['profileImage'], userIdOrRoomId: data?['userIdOrRoomId'], usersIds: data?['usersIds'].cast<num>(), deleteChatIds: data?['deleteChatIds'], unreadCounts: data?['unreadCounts']);
+    return ChatUserRoom(
+      conversationId: data?['conversationId'],
+      iAmBlocked: data?['iAmBlocked'],
+      iBlocked: data?['iBlocked'],
+      deletedId: data?['deletedId'],
+      isDeleted: data?['isDeleted'],
+      isMute: data?['isMute'],
+      lastMsg: data?['lastMsg'],
+      newMsgCount: data?['newMsgCount'],
+      time: (data?['time'] as Timestamp?)?.toDate(),
+      type: data?['type'],
+      title: data?['title'],
+      profileImage: data?['profileImage'],
+      userIdOrRoomId: data?['userIdOrRoomId'],
+      usersIds: data?['usersIds'] == null ? null : (data?['usersIds'] as List).cast<num>(),
+      deleteChatIds: data?['deleteChatIds'] == null ? null : (data?['deleteChatIds'] as Map).cast<String, String>(),
+      unreadCounts: data?['unreadCounts'] == null ? null : (data?['unreadCounts'] as Map).cast<String, num>(),
+    );
   }
 
   String? get conversationId => _conversationId;
@@ -81,12 +98,12 @@ class ChatUserRoom {
     _profileImage = json["profileImage"];
     _userIdOrRoomId = json["userIdOrRoomId"];
     // ignore: prefer_null_aware_operators
-    _usersIds = json['usersIds'] == null ? null : json['usersIds'].cast<num>();
-    _deleteChatIds = json['deleteChatIds'] == null ? null : json['deleteChatIds'].cast<String, String>();
+    _usersIds = json['usersIds'] == null ? null : (json['usersIds'] as List).cast<num>();
+    _deleteChatIds = json['deleteChatIds'] == null ? null : (json['deleteChatIds'] as Map).cast<String, String>();
 
     _unreadCounts =
         // ignore: prefer_null_aware_operators
-        json['unreadCounts'] == null ? null : json['unreadCounts'].cast<String, num>();
+          json['unreadCounts'] == null ? null : (json['unreadCounts'] as Map).cast<String, num>();
   }
 
   Map<String, Object?> toJson() {
@@ -240,7 +257,29 @@ class ChatMessage {
   num? _senderId;
   num? _storyId;
 
-  ChatMessage({String? id, String? content, String? thumbnail, String? msg, String? msgType, num? senderId, List<String>? notDeletedIdentities, int? storyId}) {
+  // Local-only upload state fields (not persisted to Firestore)
+  String? _uploadStatus;
+  double _uploadProgress = 0.0;
+  String? _localThumbnailPath;
+  String? _localVideoPath;
+  String? _localId;
+
+  ChatMessage({
+    String? id,
+    String? content,
+    String? thumbnail,
+    String? msg,
+    String? msgType,
+    num? senderId,
+    List<String>? notDeletedIdentities,
+    int? storyId,
+    // New local-only upload state fields:
+    String? uploadStatus,
+    double uploadProgress = 0.0,
+    String? localThumbnailPath,
+    String? localVideoPath,
+    String? localId,
+  }) {
     _id = id;
     _content = content;
     _msg = msg;
@@ -249,6 +288,11 @@ class ChatMessage {
     _deletedIds = notDeletedIdentities;
     _thumbnail = thumbnail;
     _storyId = storyId;
+    _uploadStatus = uploadStatus;
+    _uploadProgress = uploadProgress;
+    _localThumbnailPath = localThumbnailPath;
+    _localVideoPath = localVideoPath;
+    _localId = localId;
   }
 
   Map<String, dynamic> toJson() {
@@ -313,6 +357,32 @@ class ChatMessage {
 
   set thumbnail(String? value) {
     _thumbnail = value;
+  }
+
+  // Local-only upload state getters and setters
+  String? get uploadStatus => _uploadStatus;
+  set uploadStatus(String? value) {
+    _uploadStatus = value;
+  }
+
+  double get uploadProgress => _uploadProgress;
+  set uploadProgress(double value) {
+    _uploadProgress = value;
+  }
+
+  String? get localThumbnailPath => _localThumbnailPath;
+  set localThumbnailPath(String? value) {
+    _localThumbnailPath = value;
+  }
+
+  String? get localVideoPath => _localVideoPath;
+  set localVideoPath(String? value) {
+    _localVideoPath = value;
+  }
+
+  String? get localId => _localId;
+  set localId(String? value) {
+    _localId = value;
   }
 }
 

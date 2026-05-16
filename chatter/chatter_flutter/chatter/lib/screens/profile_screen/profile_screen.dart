@@ -62,7 +62,7 @@ class ProfileScreen extends StatelessWidget {
                   },
                   child: CustomScrollView(
                     controller: controller.scrollController,
-                    physics: AlwaysScrollableScrollPhysics(),
+                    physics: const AlwaysScrollableScrollPhysics(),
                     slivers: <Widget>[
                       GetBuilder(
                           id: controller.scrollID,
@@ -119,7 +119,6 @@ class ProfileScreen extends StatelessWidget {
                                                 ),
                                               ),
                                               ClipRRect(
-                                                // Clip it cleanly.
                                                 child: BackdropFilter(
                                                   filter: ImageFilter.blur(sigmaX: (1 - opacity) * 10, sigmaY: (1 - opacity) * 10),
                                                   child: Container(
@@ -140,7 +139,6 @@ class ProfileScreen extends StatelessWidget {
                                     ),
                                     SafeArea(
                                       child: Container(
-                                        // padding: const EdgeInsets.only(top: 18, right: 15, left: 7),
                                         child: Row(
                                           children: [
                                             !isFromTabBar
@@ -187,29 +185,33 @@ class ProfileScreen extends StatelessWidget {
                                   ],
                                 ),
                                 stretchModes: const [StretchMode.zoomBackground],
-                                // background: GestureDetector(
-                                //   child: MyCachedImage(
-                                //     imageUrl: controller.user?.backgroundImage ?? '',
-                                //     // width: Get.width,
-                                //     height: 190 + Get.mediaQuery.viewInsets.top,
-                                //   ),
-                                // ),
                               ),
                             );
                           }),
+                      // Header section (details + segment) — static, no lazy loading needed
                       SliverToBoxAdapter(
                         child: Obx(
                           () => Column(
                             children: [
                               details(controller),
-                              SizedBox(height: 10),
+                              const SizedBox(height: 10),
                               segmentController(controller),
-                              SizedBox(height: 10),
-                              if (controller.selectedPage.value == 0) postsView(controller) else gridReelsView(controller),
+                              const SizedBox(height: 10),
                             ],
                           ),
                         ),
-                      )
+                      ),
+                      // Content section — use SliverFillRemaining so the inner
+                      // ListView/GridView gets a bounded height and can lazy-load
+                      // items instead of measuring everything at once (shrinkWrap).
+                      SliverFillRemaining(
+                        hasScrollBody: true,
+                        child: Obx(
+                          () => controller.selectedPage.value == 0
+                              ? postsView(controller)
+                              : gridReelsView(controller),
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -242,7 +244,7 @@ class ProfileScreen extends StatelessWidget {
       reelType: ReelPageType.user,
       isLoading: controller.isLoading,
       onFetchMoreData: controller.fetchReels,
-      shrinkWrap: true,
+      shrinkWrap: false,
       user: controller.user,
       menus: [
         if (controller.userID == SessionManager.shared.getUserID())
@@ -311,7 +313,7 @@ class ProfileScreen extends StatelessWidget {
                         child: ClipSmoothRect(
                           radius: const SmoothBorderRadius.all(SmoothRadius(cornerRadius: 15, cornerSmoothing: cornerSmoothing)),
                           child: Container(
-                            padding: EdgeInsets.all(2),
+                            padding: const EdgeInsets.all(2),
                             color: (controller.user?.stories ?? []).isEmpty ? Colors.transparent : (controller.user?.isAllStoryShown() == false ? cPrimary : cLightText),
                             child: MyCachedImage(
                               imageUrl: (controller.user?.profile ?? ''),
@@ -559,8 +561,6 @@ class ProfileScreen extends StatelessWidget {
       () => CupertinoSlidingSegmentedControl(
         children: {0: buildSegment(LKeys.feed, 0, controller), 1: buildSegment(LKeys.reels, 1, controller)},
         groupValue: controller.selectedPage.value,
-        // backgroundColor: cWhite.withValues(alpha: 0.12),
-        // thumbColor: cWhite,
         backgroundColor: cLightText.withValues(alpha: 0.2),
         thumbColor: cBlack,
         padding: const EdgeInsets.all(0),

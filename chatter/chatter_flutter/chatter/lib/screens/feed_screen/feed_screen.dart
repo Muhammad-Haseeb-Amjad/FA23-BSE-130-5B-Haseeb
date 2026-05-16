@@ -65,9 +65,12 @@ class FeedScreen extends StatelessWidget {
                                           Container(color: cLightBg, height: 5),
                                           Container(
                                             color: cWhite,
+                                            // FeedScreen wraps FeedsView in a SingleChildScrollView,
+                                            // so shrinkWrap:true is required here.
                                             child: FeedsView(
                                               controller: controller,
                                               id: controller.feedViewID,
+                                              shrinkWrap: true,
                                             ),
                                           ),
                                         ],
@@ -109,10 +112,16 @@ class FeedsView extends StatelessWidget {
     super.key,
     required this.controller,
     required this.id,
+    // shrinkWrap defaults to false — only set true when inside an unbounded
+    // scroll parent (e.g. SingleChildScrollView in FeedScreen).
+    // Profile screen uses SliverFillRemaining which gives a bounded height,
+    // so shrinkWrap:false enables proper lazy loading there.
+    this.shrinkWrap = false,
   });
 
   final FeedScreenController controller;
   final String id;
+  final bool shrinkWrap;
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +136,8 @@ class FeedsView extends StatelessWidget {
             top: false,
             child: ListView.builder(
               primary: false,
-              shrinkWrap: true,
+              shrinkWrap: shrinkWrap,
+              physics: shrinkWrap ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.only(top: 5),
               itemCount: controller.posts.length,
               itemBuilder: (context, index) {

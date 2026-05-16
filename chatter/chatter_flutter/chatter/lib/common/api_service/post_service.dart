@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:get/get.dart';
@@ -25,7 +26,8 @@ import 'package:untitled/utilities/web_service.dart';
 class PostService {
   static var shared = PostService();
 
-  Future<void> searchPosts(String query, int start, Function(List<Post> posts) completion) async {
+  Future<void> searchPosts(
+      String query, int start, Function(List<Post> posts) completion) async {
     var param = {
       Param.keyword: query,
       Param.start: start,
@@ -43,7 +45,10 @@ class PostService {
         });
   }
 
-  Future<List<Post>> searchPostsWithInterest({required String query, required int start, required num interestId}) async {
+  Future<List<Post>> searchPostsWithInterest(
+      {required String query,
+      required int start,
+      required num interestId}) async {
     var param = {
       Param.keyword: query,
       Param.start: start,
@@ -61,7 +66,8 @@ class PostService {
     return model.data ?? [];
   }
 
-  void searchHashtags(String query, int start, Function(List<SearchTag> posts) completion) {
+  void searchHashtags(
+      String query, int start, Function(List<SearchTag> posts) completion) {
     var param = {
       Param.keyword: query,
       Param.start: start,
@@ -94,8 +100,38 @@ class PostService {
     );
   }
 
+  Future<String?> uploadFileWithProgress(
+    XFile file, {
+    void Function(double percentage)? onProgress,
+  }) async {
+    final completer = Completer<String?>();
+
+    try {
+      await ApiService.shared.multiPartCallApi(
+        url: WebService.uploadFile,
+        filesMap: {
+          'uploadFile': [file]
+        },
+        onProgress: onProgress,
+        completion: (response) {
+          final fileURL = UploadFile.fromJson(response).data;
+          completer.complete(fileURL);
+        },
+      );
+    } catch (e) {
+      if (!completer.isCompleted) {
+        completer.completeError(e);
+      }
+    }
+
+    return completer.future;
+  }
+
   void fetchPost(int postId, Function(Post? post) completion) {
-    var param = {Param.postId: postId, Param.myUserId: SessionManager.shared.getUserID()};
+    var param = {
+      Param.postId: postId,
+      Param.myUserId: SessionManager.shared.getUserID()
+    };
     ApiService.shared.call(
       url: WebService.fetchPostByPostId,
       param: param,
@@ -106,8 +142,14 @@ class PostService {
     );
   }
 
-  void fetchPostsByHashtag(String tag, int start, Function(List<Post>) completion) {
-    var param = {Param.userId: SessionManager.shared.getUserID(), Param.start: start, Param.tag: tag, Param.limit: Limits.pagination.toString()};
+  void fetchPostsByHashtag(
+      String tag, int start, Function(List<Post>) completion) {
+    var param = {
+      Param.userId: SessionManager.shared.getUserID(),
+      Param.start: start,
+      Param.tag: tag,
+      Param.limit: Limits.pagination.toString()
+    };
     ApiService.shared.call(
       param: param,
       url: WebService.fetchPostsByHashtag,
@@ -154,7 +196,8 @@ class PostService {
     );
   }
 
-  void fetchUsersWhoLikedPost({required int postId, required Function(List<User> users) completion}) {
+  void fetchUsersWhoLikedPost(
+      {required int postId, required Function(List<User> users) completion}) {
     Map<String, dynamic> param = {
       Param.postId: postId,
       Param.userId: SessionManager.shared.getUserID(),
@@ -171,8 +214,13 @@ class PostService {
     );
   }
 
-  void addComment(String comment, num postId, Function(Comment comment) completion) {
-    var params = {Param.userId: SessionManager.shared.getUserID(), Param.desc: comment, Param.postId: postId};
+  void addComment(
+      String comment, num postId, Function(Comment comment) completion) {
+    var params = {
+      Param.userId: SessionManager.shared.getUserID(),
+      Param.desc: comment,
+      Param.postId: postId
+    };
     ApiService.shared.call(
       url: WebService.addComment,
       param: params,
@@ -185,7 +233,8 @@ class PostService {
     );
   }
 
-  Future<void> fetchComments(num postId, int start, Function(List<Comment> comments) completion) async {
+  Future<void> fetchComments(num postId, int start,
+      Function(List<Comment> comments) completion) async {
     var params = {
       Param.start: start,
       Param.postId: postId,
@@ -214,14 +263,21 @@ class PostService {
         if (obj.status == true) {
           Get.back();
           Get.back();
-          BaseController.share.showSnackBar(LKeys.reportAddedSuccessfully.tr, type: SnackBarType.success);
+          BaseController.share.showSnackBar(LKeys.reportAddedSuccessfully.tr,
+              type: SnackBarType.success);
         }
       },
     );
   }
 
-  Future<void> fetchUserPosts(int userID, int start, Function(List<Post> posts) completion) async {
-    var param = {Param.myUserId: SessionManager.shared.getUserID(), Param.userId: userID.toString(), Param.start: start.toString(), Param.limit: Limits.pagination.toString()};
+  Future<void> fetchUserPosts(
+      int userID, int start, Function(List<Post> posts) completion) async {
+    var param = {
+      Param.myUserId: SessionManager.shared.getUserID(),
+      Param.userId: userID.toString(),
+      Param.start: start.toString(),
+      Param.limit: Limits.pagination.toString()
+    };
     await ApiService.shared.call(
         param: param,
         url: WebService.fetchPostByUser,
@@ -277,7 +333,10 @@ class PostService {
   }
 
   void likePost(int postID, Function() completion) {
-    var param = {Param.userId: SessionManager.shared.getUserID(), Param.postId: postID.toString()};
+    var param = {
+      Param.userId: SessionManager.shared.getUserID(),
+      Param.postId: postID.toString()
+    };
 
     ApiService.shared.call(
       param: param,
@@ -292,7 +351,10 @@ class PostService {
   }
 
   void deletePost(int postID, Function() completion) {
-    var param = {Param.userId: SessionManager.shared.getUserID(), Param.postId: postID.toString()};
+    var param = {
+      Param.userId: SessionManager.shared.getUserID(),
+      Param.postId: postID.toString()
+    };
 
     ApiService.shared.call(
       param: param,
@@ -307,7 +369,10 @@ class PostService {
   }
 
   void dislikePost(int postID, Function() completion) {
-    var param = {Param.userId: SessionManager.shared.getUserID(), Param.postId: postID.toString()};
+    var param = {
+      Param.userId: SessionManager.shared.getUserID(),
+      Param.postId: postID.toString()
+    };
 
     ApiService.shared.call(
       param: param,
@@ -331,7 +396,8 @@ class PostService {
       Param.limit: Limits.pagination.toString(),
       Param.start: start,
       Param.shouldSendSuggestedRoom: shouldSendSuggestedRoom ? 1 : 0,
-      Param.fetchPostType: SessionManager.shared.getSettings()?.fetchPostType ?? 0,
+      Param.fetchPostType:
+          SessionManager.shared.getSettings()?.fetchPostType ?? 0,
     };
     await ApiService.shared.call(
         param: param,
