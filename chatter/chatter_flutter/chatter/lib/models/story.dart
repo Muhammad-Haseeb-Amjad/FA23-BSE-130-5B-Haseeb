@@ -1,3 +1,4 @@
+import 'package:untitled/common/extensions/date_time_extension.dart';
 import 'package:untitled/common/managers/session_manager.dart';
 import 'package:untitled/library/story_view/story_view.dart';
 import 'package:untitled/models/registration.dart';
@@ -121,7 +122,7 @@ class Story {
     }
   }
 
-  DateTime get date => DateTime.parse(createdAt ?? '');
+  DateTime get date => safeParseDate(createdAt) ?? DateTime.now();
 
   String? get thumbnailForReply {
     if (type == 1) return thumbnail;

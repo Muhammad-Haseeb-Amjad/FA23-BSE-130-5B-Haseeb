@@ -40,9 +40,10 @@ class ChattingView extends StatelessWidget {
       backgroundColor: cWhite,
       body: PopScope(
         onPopInvokedWithResult: (didPop, result) {
-          if (didPop) {
-            Get.back(result: controller.room);
-          }
+          // Do NOT call Get.back() here — didPop==true means the system
+          // already completed the pop. Calling Get.back() again would
+          // trigger a second pop while the navigator is locked, causing
+          // the '!_debugLocked' assertion crash.
         },
         child: GetBuilder(
             init: controller,
@@ -297,11 +298,13 @@ class ChattingView extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                controller.chatUserRoom?.title ?? '',
-                                style: MyTextStyle.gilroyBold(size: 18, color: cWhite),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              Flexible(
+                                child: Text(
+                                  controller.chatUserRoom?.title ?? '',
+                                  style: MyTextStyle.gilroyBold(size: 18, color: cWhite),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               const SizedBox(width: 1),
                               VerifyIcon(user: controller.user)
@@ -311,22 +314,27 @@ class ChattingView extends StatelessWidget {
                             children: [
                               controller.chatUserRoom?.type == 2
                                   ? Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(
-                                          controller.room?.totalMember?.makeToString() ?? '',
-                                          style: MyTextStyle.gilroyBold(size: 14, color: cPrimary),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                        Flexible(
+                                          child: Text(
+                                            controller.room?.totalMember?.makeToString() ?? '',
+                                            style: MyTextStyle.gilroyBold(size: 14, color: cPrimary),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                         const SizedBox(width: 5),
                                       ],
                                     )
                                   : Container(),
-                              Text(
-                                controller.chatUserRoom?.type == 2 ? LKeys.members.tr : "@${controller.user?.username ?? ''}",
-                                style: MyTextStyle.gilroyLight(size: 15, color: cPrimary),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              Flexible(
+                                child: Text(
+                                  controller.chatUserRoom?.type == 2 ? LKeys.members.tr : "@${controller.user?.username ?? ''}",
+                                  style: MyTextStyle.gilroyLight(size: 15, color: cPrimary),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           )

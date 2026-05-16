@@ -1,3 +1,4 @@
+import 'package:untitled/common/extensions/date_time_extension.dart';
 import 'package:untitled/models/registration.dart';
 
 // class CommentModel {
@@ -125,5 +126,5 @@ class Comment {
 }
 
 extension O on Comment {
-  DateTime get date => DateTime.parse(createdAt ?? '');
+  DateTime get date => safeParseDate(createdAt) ?? DateTime.now();
 }

@@ -2,6 +2,36 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:untitled/localization/languages.dart';
 
+/// Safely parse a date string from backend — never throws.
+/// Returns null if the value is null, empty, or unparseable.
+DateTime? safeParseDate(dynamic value) {
+  if (value == null) return null;
+  final raw = value.toString().trim();
+  if (raw.isEmpty || raw == 'null' || raw == '0000-00-00 00:00:00') return null;
+  // Try ISO 8601 first (most common from Laravel)
+  try { return DateTime.parse(raw); } catch (_) {}
+  // Try common backend formats
+  for (final pattern in const [
+    'yyyy-MM-dd HH:mm:ss',
+    'yyyy-MM-dd HH:mm',
+    'dd MMM, yyyy h:mm a',
+    'dd MMM yyyy h:mm a',
+    'dd MMMM yyyy h:mm a',
+    'MM/dd/yyyy hh:mm a',
+    'dd MMM yyyy',
+  ]) {
+    try { return DateFormat(pattern).parse(raw); } catch (_) {}
+  }
+  return null;
+}
+
+/// Format a backend date value safely. Returns [fallback] if unparseable.
+String safeFormatDate(dynamic value, {String fallback = '—'}) {
+  final date = safeParseDate(value);
+  if (date == null) return fallback;
+  return DateFormat('dd MMM yyyy').format(date);
+}
+
 extension DateTimeExtension on DateTime {
   String timeAgo({bool numericDates = false}) {
     final date2 = DateTime.now();

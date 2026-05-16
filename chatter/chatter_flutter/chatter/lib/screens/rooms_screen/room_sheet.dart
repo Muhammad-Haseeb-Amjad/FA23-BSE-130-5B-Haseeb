@@ -169,7 +169,7 @@ class RoomSheet extends StatelessWidget {
               ),
               const SizedBox(width: 5),
               Text(
-                DateTime.parse(room.createdAt ?? '').formatFullDate(),
+                safeFormatDate(room.createdAt),
                 style: MyTextStyle.gilroySemiBold(color: cPrimary),
               ),
             ],

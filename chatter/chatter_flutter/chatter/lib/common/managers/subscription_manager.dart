@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:untitled/common/api_service/user_service.dart';
+import 'package:untitled/common/extensions/date_time_extension.dart';
 import 'package:untitled/common/managers/session_manager.dart';
 import 'package:untitled/utilities/const.dart';
 
@@ -39,7 +40,7 @@ class SubscriptionManager {
     if (customerInfo.latestExpirationDate == null || customerInfo.latestExpirationDate!.isEmpty) {
       isSubscribe = false;
     } else {
-      DateTime dt1 = DateTime.parse(customerInfo.latestExpirationDate ?? '').toLocal();
+      DateTime dt1 = (safeParseDate(customerInfo.latestExpirationDate) ?? DateTime.now()).toLocal();
       DateTime dt2 = DateTime.now();
       log('DATE : {$dt1 == $dt2}');
       if (dt1.compareTo(dt2) < 0) {
